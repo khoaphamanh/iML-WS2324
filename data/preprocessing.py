@@ -4,12 +4,15 @@ import argparse
 
 def preprocessing_compas(name_raw_dataset:pd.DataFrame, name = "compas"):
     """
-    This function will preprocess the raw dataset COMPAS compas-scores-two-years.csv from https://github.com/domenVres/Robust-LIME-SHAP-and-IME contains 7214 samples and 52 features
+    This function will preprocess the raw dataset COMPAS compas-scores-two-years.csv from https://github.com/domenVres/Robust-LIME-SHAP-and-IME contains 7214 samples and 52 features.
+    We wil use only 7 fearures, they are: "age, "two_year_recid", "c_charge_degree", "sex", "priors_count", "length_of_stay", "race". Two categorical features  "c_charge_degree" and "sex" will be one-hot-encoding encoded. 
+    Fearure "race" will have value 1 if they are African-American else 0.
+    Label are the value of "score_text" column. They have value 1 if the score are "High" else 0.
+    Preprocessing does not contain the normalization.
     
     Parameters:
 	    name_raw_dataset str): name of the COMPAS dataset "compas-scores-two-years.csv"
-        save (boolean), defaule = True: preprocessed data is saved as .csv
-        name (str), defalt = "compas_preprocessed"
+        name (str), defalt = "compas"
     Returns:
 	    X (pd.DataFrame): preprocessed COMPAS dataset shape (6172,9)
         y (pd.DataFrame): label of COMPAS dataset shape(6172,1)
