@@ -2,7 +2,7 @@ import os
 import pandas as pd
 import argparse
 
-def preprocessing_compas(name_raw_dataset:pd.DataFrame, name = "compas",save = True):
+def preprocessing_compas(name_raw_dataset:pd.DataFrame, name = "compas"):
     """
     This function will preprocess the raw dataset COMPAS compas-scores-two-years.csv from https://github.com/domenVres/Robust-LIME-SHAP-and-IME contains 7214 samples and 52 features
     
@@ -47,34 +47,32 @@ def preprocessing_compas(name_raw_dataset:pd.DataFrame, name = "compas",save = T
     y = pd.DataFrame(y, columns = ["label"])
     
     #save the dataset
-    if save:
-        X.to_csv(name+"_X.csv")
-        y.to_csv(name+"_y.csv")
-        
+    X.to_csv(name+"_X.csv")
+    y.to_csv(name+"_y.csv")
+    print("Done!!!! preprocessed datasets are saved under the name {} and {}".format(name+"_X.csv",name+"_y.csv"))
+    
     return X,y
 
 if __name__ == "__main__":
     """
     Output of this file are the preprocessed COMPAS dataset and label. User can run this file with syntax from argparse to test our function:
     
-        python preprocessing.py --name "yourname" --save True
+        python preprocessing.py --name "yourname" 
         
-    Then the output should be yourname_X.csv and yourname_y.csv. Default of the --name and --save are "compas" and True and our output files are compas_X.csv and compas_y.csv
+    Then the output should be yourname_X.csv and yourname_y.csv. Default of the --name is "compas" and our output files are compas_X.csv and compas_y.csv
     """
     # create a argpase
     parse = argparse.ArgumentParser()
 
     # add argument
     parse.add_argument("--name", type=str, default="compas")
-    parse.add_argument("--save", type=bool, default=True)
     
     # read the argument
     args = parse.parse_args()
     name = args.name
-    save = args.save
     
     # preprocessing
     name_raw_dataset = "compas-scores-two-years.csv"
-    preprocessed_dataset = preprocessing_compas(name_raw_dataset=name_raw_dataset,name=name,save=save)
+    preprocessed_dataset = preprocessing_compas(name_raw_dataset=name_raw_dataset,name=name)
 
 
