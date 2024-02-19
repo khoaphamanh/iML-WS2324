@@ -76,6 +76,4 @@ if __name__ == "__main__":
     
     # preprocessing
     name_raw_dataset = "compas-scores-two-years.csv"
-    preprocessed_dataset = preprocessing_compas(name_raw_dataset=name_raw_dataset,name=name)
-
-
+    X, y = preprocessing_compas(name_raw_dataset=name_raw_dataset,name=name)
