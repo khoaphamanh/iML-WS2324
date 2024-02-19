@@ -9,3 +9,5 @@ conda env create -f environment.yml
 source activate iML
 ```
 
+## Preprocessing 
+bước tiền xử lý đc làm ở trong dir data, giải thích cách preprocessing và cách dùng argpare. Nói về việc chỉ làm compas dataset
