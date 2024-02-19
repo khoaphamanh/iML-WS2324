@@ -103,7 +103,7 @@ summary(model)
 count = torch.bincount(y_train)
 pos_weight = count[0] / count[1]
 print("pos_weight:", pos_weight)
-loss = nn.BCEWithLogitsLoss() #pos_weight=pos_weight
+loss = nn.BCEWithLogitsLoss(weight=pos_weight) #pos_weight=pos_weight
 optimizer = torch.optim.Adam(model.parameters(),lr=LR, weight_decay=WD)
 
 # accuracy function
@@ -157,16 +157,16 @@ for epoch in range(EPOCH):
         print('loss test = {}, accuracy test = {} , f1 test {}'.format(loss_test, accuracy_test, f1_test))
         print()
 
-y_out = model(X_test)
-y_out = torch.round(torch.sigmoid(y_out)).ravel().int()  
+y_out = model(X_test).ravel()
+y_out = torch.round(torch.sigmoid(y_out)).int()  
 count_pred = torch.bincount(y_out)
 print("count_pred:", count_pred)
 count_true = torch.bincount(y_test)
 print("count_true:", count_true)
 
-y_out = model(X_test)
-y_out = torch.round(torch.sigmoid(y_out)).ravel().int()  
+y_out = model(X_train).ravel()
+y_out = torch.round(torch.sigmoid(y_out)).int()  
 count_pred = torch.bincount(y_out)
 print("count_pred:", count_pred)
-count_true = torch.bincount(y_test)
+count_true = torch.bincount(y_train)
 print("count_true:", count_true)
