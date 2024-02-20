@@ -20,7 +20,7 @@ Output of this file is the pretrained blackbox model as neural network on COMPAS
     
 Then the output should be yourname.pth. Default of the arguments:
 
---name: "neuralnetwork" and our output files is neural_network.pth
+--name: "neural_network" and our output files is neural_network.pth
 --hidden_size: 16
 --hidden_layers: 10
 --lr: 0.01
