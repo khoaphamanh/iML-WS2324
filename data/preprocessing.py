@@ -74,7 +74,7 @@ if __name__ == "__main__":
     parse = argparse.ArgumentParser()
 
     # add argument
-    parse.add_argument("--name", type=str, default=utils.name_preprocessed,help="preprocessed data will be save under the name_X.csv and name_y.csv, default is 'compas'")
+    parse.add_argument("--name", type=str, default=utils.name_preprocessed,help="preprocessed data will be save under the name_X.csv and name_y.csv, default is {}".format(utils.name_preprocessed))
     
     # read the argument
     args = parse.parse_args()
