@@ -17,9 +17,14 @@ input_size = 9
 hidden_size = 16
 hidden_layers = 10
 output_size = 1
-lr_blackbox = 0.001
-epoch_blackbox = 1000
+lr_blackbox = 0.01
+epoch_blackbox = 2000
 wd_blackbox = 1e-5
+name_blackbox_nn = "neural_network"
+
+#Parameter for black-box model as neuralnetwork
+name_blackbox_rf = "random_forest"
+n_estimators_blackbox = 100
 
 #Parameter for generator as MCD_VAE
 
