@@ -33,9 +33,9 @@ TEST_SIZE = utils.test_size
 # add argument
 parse = argparse.ArgumentParser()
 parse.add_argument("--name", type=str, default=utils.name_blackbox_rf,
-                   help="name of the pretrained blackbox model name.pth, default is 'random_forest'")
+                   help="name of the pretrained blackbox model name.pth, default is '{}'".format(utils.name_blackbox_rf))
 parse.add_argument("--n_estimators", type=int, default=utils.n_estimators_blackbox,
-                   help="number of trees in model, default is 100")
+                   help="number of trees in model, default is {}".format(utils.n_estimators_blackbox))
 
 # read the argument
 args = parse.parse_args()
