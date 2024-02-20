@@ -27,5 +27,13 @@ name_blackbox_rf = "random_forest"
 n_estimators_blackbox = 100
 
 #Parameter for generator as MCD_VAE
-
-
+name_vae = "mcd_vae"
+origin_dim_vae = 9
+intermediate_dim_vae = 8
+latent_dim_vae = origin_dim_vae // 2
+epoch_vae = 100
+dropout_vae = 0.3
+batch_size_vae = 100
+lr_vae = 0.001
+wd_vae = 1e-4
+landa_vae = 1
