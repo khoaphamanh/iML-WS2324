@@ -12,6 +12,7 @@ import argparse
 import pandas as pd
 from torchinfo import summary
 from sklearn.metrics import f1_score
+import numpy as np
 
 """
 Output of this file is the pretrained blackbox model as neural network on COMPAS dataset. The task is binary classification, we use Adam optimizer and BCE Loss to train model. User can run this file with syntax from argparse to test our file:
@@ -38,17 +39,17 @@ OUTPUT_SIZE = utils.output_size
 # add argument
 parse = argparse.ArgumentParser()
 parse.add_argument("--name", type=str, default=utils.name_blackbox_nn,
-                   help="name of the pretrained blackbox model name.pth, default is 'neural_network'")
+                   help="name of the pretrained blackbox model name.pth, default is '{}'".format(utils.name_blackbox_nn))
 parse.add_argument("--hidden_size", type=int, default=utils.hidden_size,
-                   help="number of hidden units in one hidden layer in model, default is 16")
+                   help="number of hidden units in one hidden layer in model, default is {}".format(utils.hidden_size))
 parse.add_argument("--hidden_layers", type=int, default=utils.hidden_layers,
-                   help="number of hidden layers in model, default is 10")
+                   help="number of hidden layers in model, default is {}".format(utils.hidden_layers))
 parse.add_argument("--lr", type=float, default=utils.lr_blackbox,
-                   help="learning rate, default is 0.01")
+                   help="learning rate, default is {}".format(utils.lr_blackbox))
 parse.add_argument("--epoch", type=int, default=utils.epoch_blackbox,
-                   help="epoch, default is 2000")
+                   help="epoch, default is {}".format(utils.epoch_blackbox))
 parse.add_argument("--wd", type=float, default=utils.wd_blackbox,
-                   help="weight decay, default is 1e-5")
+                   help="weight decay, default is {}".format(utils.wd_blackbox))
 
 # read the argument
 args = parse.parse_args()
@@ -97,16 +98,13 @@ def split_and_normalize(X,y,seed,test_size):
     return X_train, X_test, y_train, y_test
     
 X_train, X_test, y_train, y_test = split_and_normalize(X=X,y=y,seed=SEED,test_size=TEST_SIZE)
-# count = 
-# print("count:", count)
 
 #create model
 class BlackBoxModel(nn.Module):
-    def __init__(self, input_size: int, hidden_size: int, hidden_layers:int, output_size ):
+    def __init__(self, input_size: int, hidden_size: int, hidden_layers:int, output_size:int ):
         super().__init__()
         self.input_layer = nn.Linear(input_size, hidden_size)
         self.hidden_layers = nn.ModuleList([nn.Sequential(nn.Linear(hidden_size, hidden_size), nn.ReLU()) for i in range(hidden_layers)])
-        #self.hidden_layers = nn.Linear(hidden_size,hidden_size)
         self.relu = nn.ReLU()
         self.output_layer = nn.Linear(hidden_size, output_size)
     
@@ -118,6 +116,16 @@ class BlackBoxModel(nn.Module):
             x = self.relu(x)
         x = self.output_layer(x)
         return x
+    
+    def predict(self,x:np.array,prob = True):
+        x = torch.tensor(x)
+        with torch.inference_mode():
+            out =  self.forward(x)
+            if prob:
+                return torch.sigmoid(out).numpy()
+            else:
+                return out.numpy()
+        
 
 #init model
 model = BlackBoxModel(input_size=INPUT_SIZE, hidden_size=HIDDEN_SIZE, hidden_layers=HIDDEN_LAYERS,output_size=OUTPUT_SIZE)
@@ -126,8 +134,7 @@ summary(model)
 #optimizer and loss
 count = torch.bincount(y_train)
 pos_weight = count[0] / count[1]
-print("pos_weight:", pos_weight)
-loss = nn.BCEWithLogitsLoss(weight=pos_weight) #pos_weight=pos_weight
+loss = nn.BCEWithLogitsLoss(weight=pos_weight)
 optimizer = torch.optim.Adam(model.parameters(),lr=LR, weight_decay=WD)
 
 # accuracy function
