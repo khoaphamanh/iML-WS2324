@@ -16,7 +16,7 @@ from sklearn.metrics import f1_score
 """
 Output of this file is the pretrained blackbox model as neural network on COMPAS dataset. User can run this file with syntax from argparse to test our file:
 
-    python neuralnetwork.py --name "yourname" --hidden_size "your_hidden_size" --hidden_layers "your_hidden_layers" --lr "your_lr" --epoch "your_epoch" --wd "your_wd"
+    python neural_network.py --name "yourname" --hidden_size "your_hidden_size" --hidden_layers "your_hidden_layers" --lr "your_lr" --epoch "your_epoch" --wd "your_wd"
     
 Then the output should be yourname.pth. Default of the arguments:
 
