@@ -16,7 +16,7 @@ def preprocessing_compas(name_raw_dataset:pd.DataFrame, name = utils.name_prepro
     
     Parameters:
 	    name_raw_dataset str): name of the COMPAS dataset "compas-scores-two-years.csv"
-        name (str), defalt = "compas"
+        name (str), defalt = "compas": preprocessed data will be save under the name_X.csv and name_y.csv
     Returns:
 	    X (pd.DataFrame): preprocessed COMPAS dataset shape (6172,9)
         y (pd.DataFrame): label of COMPAS dataset shape(6172,1)
@@ -74,7 +74,7 @@ if __name__ == "__main__":
     parse = argparse.ArgumentParser()
 
     # add argument
-    parse.add_argument("--name", type=str, default=utils.name_preprocessed)
+    parse.add_argument("--name", type=str, default=utils.name_preprocessed,help="preprocessed data will be save under the name_X.csv and name_y.csv, default is 'compas'")
     
     # read the argument
     args = parse.parse_args()
