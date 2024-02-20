@@ -12,7 +12,7 @@ import argparse
 import pandas as pd
 import numpy as np
 from torchinfo import summary
-from sklearn.metrics import f1_score, precision_score, recall_score
+from sklearn.metrics import f1_score
 
 """
 Output of this file is the pretrained blackbox model as neural network on COMPAS dataset. User can run this file with syntax from argparse to test our file:
