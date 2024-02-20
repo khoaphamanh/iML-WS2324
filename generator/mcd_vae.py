@@ -12,11 +12,12 @@ import argparse
 import pandas as pd
 from torchinfo import summary
 from torch.utils.data import TensorDataset, DataLoader
+import numpy as np
 
 """
-Output of this file is the generator model as neural network on COMPAS dataset. The task is binary classification, we use Adam optimizer and BCE Loss to train model. User can run this file with syntax from argparse to test our file:
+This file train the generator model as Monte Carlo Dropout Variational Auto Encoder (MCD VAE) on COMPAS dataset. The task is to generate data in same distribution of COMPAS dataset. Output of this file is a pretrained MCD VAE and the generated dataset.
 
-    python mcd_vae.py --name "yourname" --intermediate_dim "your_intermediate_dim" --latent_dim "your_latent_dim" --dropout "your_dropout" --batch_size "your_batch_size" --lr "your_lr" --epoch "your_epoch" --wd "your_wd" --landa "your_landa"
+    python mcd_vae.py --name "yourname" --intermediate_dim "your_intermediate_dim" --latent_dim "your_latent_dim" --dropout "your_dropout" --batch_size "your_batch_size" --lr "your_lr" --epoch "your_epoch" --wd "your_wd" --landa "your_landa" --num_gen "your_num_gen" --name_gen "your_name_gen"
     
 Then the output should be yourname.pth. Default of the arguments:
 
@@ -29,6 +30,8 @@ Then the output should be yourname.pth. Default of the arguments:
 --epoch: 100
 --wd: 1e-4
 --landa: 1
+--num_gen: 1000
+--name_gen: "gen_data" and our generated data files is gen_data.npy shape (n_samples, num_gen+1, n_feature + 1)
 """
 
 #fix parameter and constante
@@ -40,23 +43,27 @@ TEST_SIZE = utils.test_size
 # add argument
 parse = argparse.ArgumentParser()
 parse.add_argument("--name", type=str, default=utils.name_vae,
-                   help="name of the pretrained generator model name.pth, default is 'mcd_vae'")
+                   help="name of the pretrained generator model name.pth, default is '{}'".format(utils.name_vae))
 parse.add_argument("--intermediate_dim", type=int, default=utils.intermediate_dim_vae,
-                   help="number of intermediate dimensions in the first hidden layer in model, default is 8")
+                   help="number of intermediate dimensions in the first hidden layer in model, default is {}".format(utils.intermediate_dim_vae))
 parse.add_argument("--latent_dim", type=int, default=utils.latent_dim_vae,
-                   help="number of dimension in latent space in model, default is 4")
+                   help="number of dimension in latent space in model, default is {}".format(utils.latent_dim_vae))
 parse.add_argument("--dropout", type=float, default=utils.dropout_vae,
-                   help="dropout rate, default is 0.3")
+                   help="dropout rate, default is {}".format(utils.dropout_vae))
 parse.add_argument("--batch_size", type=int, default=utils.batch_size_vae,
-                   help="batch_size, default is 100")
-parse.add_argument("--lr", type=float, default=utils.lr_blackbox,
-                   help="learning rate, default is 0.001")
+                   help="batch_size, default is {}".format(utils.batch_size_vae))
+parse.add_argument("--lr", type=float, default=utils.lr_vae,
+                   help="learning rate, default is {}".format(utils.lr_vae))
 parse.add_argument("--epoch", type=int, default=utils.epoch_vae,
-                   help="epoch, default is 100")
+                   help="epoch, default is {}".format(utils.epoch_vae))
 parse.add_argument("--wd", type=float, default=utils.wd_vae,
-                   help="weight decay, default is 1e-4")
+                   help="weight decay, default is {}".format(utils.wd_vae))
 parse.add_argument("--landa", type=float, default=utils.landa_vae,
-                   help="landa for Kullback Leibler Divergence in loss, default is 1")
+                   help="landa for Kullback Leibler Divergence in loss, default is {}".format(utils.landa_vae))
+parse.add_argument("--num_gen", type=int, default=utils.num_gen,
+                   help="number of generated samples from one real sample {}".format(utils.num_gen))
+parse.add_argument("--name_gen", type=str, default=utils.name_gen,
+                   help="name savec generated data {}".format(utils.name_gen))
 
 # read the argument
 args = parse.parse_args()
@@ -69,14 +76,16 @@ WD = args.wd
 DROPOUT = args.dropout
 BATCH_SIZE = args.batch_size
 LANDA = args.landa
+NUM_GEN = args.num_gen
+NAME_GEN = args.name_gen
 
 #load data
 name_X = utils.name_preprocessed_data_X
 name_y = utils.name_preprocessed_data_y
 path_X = os.path.join(project_path,"data",name_X)
 path_y = os.path.join(project_path,"data",name_y)
-X_train = pd.read_csv(path_X,index_col=0).to_numpy()
-y_train = pd.read_csv(path_y,index_col=0).to_numpy().flatten()
+X = pd.read_csv(path_X,index_col=0).to_numpy()
+y = pd.read_csv(path_y,index_col=0).to_numpy().flatten()
 
 #turn data to tensor and split it
 def split_and_normalize(X,y,seed,test_size):
@@ -105,9 +114,9 @@ def split_and_normalize(X,y,seed,test_size):
     #turn data to tensor
     X_train, X_test, y_train, y_test = torch.tensor(X_train).float(), torch.tensor(X_test).float(), torch.tensor(y_train), torch.tensor(y_test)
     
-    return X_train, X_test, y_train, y_test
+    return X_train, X_test, y_train, y_test, scaler
 
-X_train, X_test, y_train, y_test = split_and_normalize(X=X_train,y=y_train,seed=SEED,test_size=TEST_SIZE)
+X_train, X_test, y_train, y_test, scaler = split_and_normalize(X=X,y=y,seed=SEED,test_size=TEST_SIZE)
 
 #create tensor dataset and dataloader
 train_data = TensorDataset(X_train,y_train)
@@ -146,22 +155,53 @@ class MonteCarloDropoutVariationalAutoEncoder(nn.Module):
             nn.Sigmoid(),
         )
     
-    def encode_mean_variance (self,x):
+    def encode_mean_variance (self,x: torch.tensor):
         x = self.encoder(x)
         mean, variance = self.latent_mean(x), self.latent_variance(x)
         return mean, variance
     
-    def reparameterization (self,mean, variance):
+    def reparameterization (self,mean: torch.tensor, variance: torch.tensor):
         epsilon = torch.randn_like(variance)
         z = mean + variance*epsilon
         return z
 
-    def forward(self,x):
+    def forward(self,x: torch.tensor):
         mean, variance = self.encode_mean_variance(x)
         z = self.reparameterization(mean,torch.exp(variance*0.5))
         x_ = self.decoder(z)
         return x_, mean, variance
     
+    def latent_z (self, x: torch.tensor):
+        with torch.inference_mode():
+            mean, variance = self.encode_mean_variance(x)
+            z = self.reparameterization(mean,torch.exp(variance*0.5))
+            return z
+        
+    def generate_data (self,x: np.array,num_gen:int, scaler:MinMaxScaler):
+        
+        """
+        This function creates fake samples with label 0. True sample will have label 1.
+        
+        Parameters:
+            x (torch.tensor): true sample
+            num_gen (int): number of fake samples
+            scaler (sklearn.MinMaxScaler): scaler of the train data
+        Returns:
+            new_samples (np.array): array shape (num_gen + 1, n_feature + 1) contains true sample at row 0, fake samples at index row 1 to (num_gen-1). Last column is the label.
+        """
+        x_tensor = torch.tensor(x).float()
+        new_X = [x]
+        new_y = [1]
+        for i in range(num_gen):
+            with torch.inference_mode():
+                self.train()
+                x_,_,_ = self.forward(x_tensor)
+                new_X.append(x_.numpy())
+                new_y.append(0)
+        new_X = scaler.inverse_transform(new_X)
+        new_samples = np.column_stack((np.array(new_X), np.array(new_y))) 
+        return new_samples
+        
 #init model
 model = MonteCarloDropoutVariationalAutoEncoder(origin_dim=ORIGIN_DIM,intermediate_dim=INTERMEDIATE_DIM,latent_dim=LATENT_DIM,dropout=DROPOUT)
 summary(model)
@@ -172,7 +212,7 @@ class Loss (nn.Module):
         super().__init__()
 
     def forward(self,x_: torch.tensor, x: torch.tensor, mean: torch.tensor,variance: torch.tensor, lamda = 1):
-        BCE = nn.BCELoss() #reduction="sum"#nn.MSELoss(reduction="sum") #reduction="sum" # #nn.L1Loss(reduction="sum") nn.L1Loss(reduction="sum")nn.BCEWithLogitsLoss(reduction="sum") 
+        BCE = nn.BCELoss(reduction="sum")
         reconstruction_loss = BCE(x_,x)
         KLD = -0.5 * torch.sum(1 + variance - mean.pow(2) - variance.exp())
         return reconstruction_loss + lamda * KLD, reconstruction_loss, KLD
@@ -194,10 +234,6 @@ for ep in range(EPOCH):
         #forward pass
         X_pred_train,mean_train,variance_train = model(X_train)
         
-        # print("X_ shape:", X_.shape)
-        # print("mean:", mean.shape)
-        # print("var:", variance.shape)
-    
         #calculate the loss
         loss_train_total_this_batch, loss_train_reconsruct_this_batch, loss_train_kld_this_batch = loss(X_pred_train,X_train,mean_train,variance_train,LANDA)
         loss_total_train = loss_total_train + loss_train_total_this_batch
@@ -217,7 +253,6 @@ for ep in range(EPOCH):
     loss_total_train = loss_total_train / len(train_loader)
     loss_reconstruct_train = loss_reconstruct_train / len(train_loader)
     loss_kld_train = loss_kld_train / len(train_loader)
-    print("epoch {}, loss total {}, loss reconstruct {}, loss kld {}".format(ep,loss_total_train, loss_reconstruct_train, loss_kld_train))
     
     #evaluate step
     loss_total_test = 0
@@ -241,10 +276,32 @@ for ep in range(EPOCH):
         loss_total_test = loss_total_test / len(test_loader)
         loss_reconstruct_test = loss_reconstruct_test / len(test_loader)
         loss_kld_test = loss_kld_test / len(test_loader)
+    
+    #print the metrics
+    if ep % 10 == 0 or ep == EPOCH-1:
+        print("epoch {}, loss total {}, loss reconstruct {}, loss kld {}".format(ep,loss_total_train, loss_reconstruct_train, loss_kld_train))
         print("epoch {}, loss total {}, loss reconstruct {}, loss kld {}".format(ep,loss_total_test, loss_reconstruct_test, loss_kld_test))
         print()
 
-test = X_train[0]
-print("test:", test)
-y_train_out = model(test)
-print("y_train_out:", y_train_out)
+#save the model
+state_dict = model.state_dict()
+current_path = os.path.dirname(os.path.abspath(__file__))
+model_path = os.path.join(current_path,NAME+".pth")
+if not os.path.exists(model_path):
+    torch.save(state_dict,model_path)
+print("Done!!! Your model is saved under name {}".format(NAME+".pth"))
+
+#generated data
+new_dataset = []
+for x in X:
+    x = scaler.fit_transform(x.reshape(1, -1)).flatten()
+    new_samples = model.generate_data(x = x,num_gen=NUM_GEN,scaler=scaler)
+    new_dataset.append(new_samples)
+new_dataset = np.array(new_dataset)
+print("new_dataset shape:", new_dataset.shape)
+
+#save generated data
+new_dataset_path = os.path.join(current_path,NAME_GEN+".npy")
+if not os.path.exists(new_dataset_path):
+    np.save(new_dataset_path,new_dataset)
+print("Done!!! Your generated datasets is saved under name {}".format(NAME_GEN+".npy"))
