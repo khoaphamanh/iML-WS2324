@@ -74,7 +74,7 @@ if __name__ == "__main__":
     parse = argparse.ArgumentParser()
 
     # add argument
-    parse.add_argument("--name", type=str, default="compas")
+    parse.add_argument("--name", type=str, default=utils.name_preprocessed)
     
     # read the argument
     args = parse.parse_args()
