@@ -40,7 +40,7 @@ Default of the arguments are saved in ultis.py:
     --n_estimators: 100
 
 ## Generator models
-To get samples with the same distribution of the data, we will use Monte Carlo Dropout Variational Auto Encoder (MCD VAE) [[2]](#2) as shown in the paper [[1]](#1). In the mcd_vae.py file, we take the model structure and hyperparameters directly from the paper. The output of this file is a generator (MCD VAE) saved as mcd_vae.pth, generated data as gen_data.npy. The performance of the model can be visualized with metrics_vae.png. Users can run this file again with the syntax from argparse:
+To get samples with the same distribution of the data, we will use Monte Carlo Dropout Variational Autoencoder (MCD VAE) [[2]](#2) as shown in the paper [[1]](#1). In the mcd_vae.py file, we take the model structure and hyperparameters directly from the paper. The output of this file is a generator (MCD VAE) saved as mcd_vae.pth, generated data as gen_data.npy. The performance of the model can be visualized with metrics_vae.png. Users can run this file again with the syntax from argparse:
 ```bash
 python mcd_vae.py --name "yourname" --intermediate_dim "your_intermediate_dim" --latent_dim "your_latent_dim" --dropout "your_dropout" --batch_size "your_batch_size" --lr "your_lr" --epoch "your_epoch" --wd "your_wd" --landa "your_landa" --num_gen "your_num_gen" --name_gen "your_name_gen" --name_metrics "your_name_metrics"
 ```
