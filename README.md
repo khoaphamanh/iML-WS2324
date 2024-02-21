@@ -59,7 +59,7 @@ Default of the arguments are saved in ultis.py:
     --name_gen: "gen_data" and our generated data files is gen_data.npy shape (n_samples, num_gen+1, n_feature + 1)
     --name_metrics: "metrics_ae_custom" and the metrics of the model is saved under the name metrics_vae.png
 
-We noticed that, as the article says, MCD VAE doesn't really have good performance, or in other words, there is a visible difference to the naked eye between a sample in datasets and a generated sample. Therefore, we customized a model that includes more linear layers, more ReLU and Dropout activation functions, and uses an Auto Encoder structure instead of VAE to increase the generator's performance. This can be expressed through the mcd_ae_custom.py file. The output of this file includes pretrained generator mcd_ae_custom.pth, generated data gen_data_custom.npy and metrics curves metrics_vae.png. Users can run this file again with the syntax from argparse:
+We noticed that, as the article says, MCD VAE doesn't really have good performance, or in other words, there is a visible difference to the naked eye between a sample in datasets and a generated sample. Therefore, we customized a model that includes more linear layers, more ReLU and Dropout activation functions, and uses an Autoencoder [[4]](#4) structure instead of VAE to increase the generator's performance. This can be expressed through the mcd_ae_custom.py file. The output of this file includes pretrained generator mcd_ae_custom.pth, generated data gen_data_custom.npy and metrics curves metrics_vae.png. Users can run this file again with the syntax from argparse:
 ```bash
 python mcd_vae.py --name "yourname" --intermediate_dim "your_intermediate_dim" --latent_dim "your_latent_dim" --dropout "your_dropout" --batch_size "your_batch_size" --lr "your_lr" --epoch "your_epoch" --wd "your_wd" --num_gen "your_num_gen" --name_gen "your_name_gen" --name_metrics "your_name_metrics"
 ```
@@ -97,3 +97,8 @@ https://arxiv.org/pdf/2101.11702.pdf
 Kristian Miok, Deng Nguyen-Doan (2019)
 Generating Data using Monte Carlo Dropout
 https://arxiv.org/pdf/1909.05755v2.pdf
+
+<a id="2">[4]</a>
+Dor Bank, Noam Koenigstein, Raja Giryes (2021)
+Autoencoders
+https://arxiv.org/pdf/2003.05991.pdf
