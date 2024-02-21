@@ -278,7 +278,9 @@ plt.legend(loc = 1)
 plt.xlabel('epoch')
 plt.ylabel('loss')
 plt.title('BCE Loss of custom MCD AE')
-plt.savefig(metrics_path)
+
+if not os.path.exists(metrics_path):
+    plt.savefig(metrics_path)
 print("Done!!! Metrics of model is saved under name {}".format(NAME_METRICS+".png"))
 
 #generated data
