@@ -20,7 +20,7 @@ Output of this file is the pretrained blackbox model as neural network on COMPAS
 
     python neural_network.py --name "yourname" --hidden_size "your_hidden_size" --hidden_layers "your_hidden_layers" --lr "your_lr" --epoch "your_epoch" --wd "your_wd" --name_metrics "your_name_metrics"
     
-Then the output should be yourname.pth. Default of the arguments:
+Then the output should be yourname.pth and your_name_metrics.png. Default of the arguments:
 
 --name: "neural_network" and our output files is neural_network.pth
 --hidden_size: 16
