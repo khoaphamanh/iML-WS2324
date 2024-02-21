@@ -13,11 +13,12 @@ import pandas as pd
 from torchinfo import summary
 from sklearn.metrics import f1_score
 import numpy as np
+import matplotlib.pyplot as plt
 
 """
 Output of this file is the pretrained blackbox model as neural network on COMPAS dataset. The task is binary classification, we use Adam optimizer and BCE Loss to train model. User can run this file with syntax from argparse to test our file:
 
-    python neural_network.py --name "yourname" --hidden_size "your_hidden_size" --hidden_layers "your_hidden_layers" --lr "your_lr" --epoch "your_epoch" --wd "your_wd"
+    python neural_network.py --name "yourname" --hidden_size "your_hidden_size" --hidden_layers "your_hidden_layers" --lr "your_lr" --epoch "your_epoch" --wd "your_wd" --name_metrics "your_name_metrics"
     
 Then the output should be yourname.pth. Default of the arguments:
 
@@ -27,6 +28,7 @@ Then the output should be yourname.pth. Default of the arguments:
 --lr: 0.01
 --epoch: 2000
 --wd: 1e-5
+--name_metrics: "metrics_neural_network" and the metrics of the model is saved under the name metrics_neural_network.png
 """
 
 #fix parameter and constante
@@ -50,6 +52,8 @@ parse.add_argument("--epoch", type=int, default=utils.epoch_blackbox,
                    help="epoch, default is {}".format(utils.epoch_blackbox))
 parse.add_argument("--wd", type=float, default=utils.wd_blackbox,
                    help="weight decay, default is {}".format(utils.wd_blackbox))
+parse.add_argument("--name_metrics", type=str, default=utils.name_metrics_blackbox_nn,
+                   help="name the metrics {}".format(utils.name_metrics_blackbox_nn))
 
 # read the argument
 args = parse.parse_args()
@@ -59,6 +63,7 @@ HIDDEN_LAYERS = args.hidden_layers
 LR = args.lr
 EPOCH = args.epoch
 WD = args.wd
+NAME_METRICS = args.name_metrics
 
 #load data
 name_X = utils.name_preprocessed_data_X
@@ -118,14 +123,13 @@ class BlackBoxModel(nn.Module):
         return x
     
     def predict(self,x:np.array,prob = True):
-        x = torch.tensor(x)
+        x = torch.tensor(x).float()
         with torch.inference_mode():
             out =  self.forward(x)
             if prob:
                 return torch.sigmoid(out).numpy()
             else:
                 return out.numpy()
-        
 
 #init model
 model = BlackBoxModel(input_size=INPUT_SIZE, hidden_size=HIDDEN_SIZE, hidden_layers=HIDDEN_LAYERS,output_size=OUTPUT_SIZE)
@@ -133,8 +137,8 @@ summary(model)
 
 #optimizer and loss
 count = torch.bincount(y_train)
-pos_weight = count[0] / count[1]
-loss = nn.BCEWithLogitsLoss(weight=pos_weight)
+weight = count[0] / count[1]
+loss = nn.BCEWithLogitsLoss(weight=weight)
 optimizer = torch.optim.Adam(model.parameters(),lr=LR, weight_decay=WD)
 
 # accuracy function
@@ -143,6 +147,15 @@ def accuracy_function (y_pred_label, y_true):
     accuracy = sum(check) / len(y_true) * 100
     return accuracy
 
+#training loop
+loss_train_list = []
+accuracy_train_list = []
+
+loss_test_list = []
+accuracy_test_list = []
+
+f1_train_list = []
+f1_test_list = []
 for epoch in range(EPOCH):
 
     #training mode:
@@ -188,6 +201,15 @@ for epoch in range(EPOCH):
         print('loss test = {}, accuracy test = {} , f1 test {}'.format(loss_test, accuracy_test, f1_test))
         print()
 
+    #store the metrics in list
+    loss_train_list.append(loss_train.detach().numpy())
+    accuracy_train_list.append(accuracy_train.detach().numpy())
+    f1_train_list.append(f1_train)
+    
+    loss_test_list.append(loss_test.detach().numpy())
+    accuracy_test_list.append(accuracy_test.detach().numpy())
+    f1_test_list.append(f1_test)
+    
 #save the model
 state_dict = model.state_dict()
 current_path = os.path.dirname(os.path.abspath(__file__))
@@ -195,3 +217,37 @@ model_path = os.path.join(current_path,NAME+".pth")
 if not os.path.exists(model_path):
     torch.save(state_dict,model_path)
 print("Done!!! Your model is saved under name {}".format(NAME+".pth"))
+
+#save the metrics
+plt.figure(figsize=(13,7))
+plt.suptitle("Metrics of pretrained blackbox neural network")
+metrics_path = os.path.join(current_path,NAME_METRICS+".png")
+epoch_list = [i for i in range(EPOCH)]
+
+plt.subplot(1,3,1)
+plt.plot(epoch_list,loss_train_list,label = 'train')
+plt.plot(epoch_list, loss_test_list, label='test')
+plt.legend(loc = 1)
+plt.xlabel('epoch')
+plt.ylabel('loss')
+plt.title('BCE Loss')
+
+plt.subplot(1,3,2)
+plt.plot(epoch_list, accuracy_train_list,label = 'train')
+plt.plot(epoch_list, accuracy_test_list, label='test')
+plt.legend(loc = 1)
+plt.xlabel('epoch')
+plt.ylabel('accuracy')
+plt.title('Accuracy')
+
+plt.subplot(1,3,3)
+plt.plot(epoch_list, f1_train_list,label = 'train')
+plt.plot(epoch_list, f1_test_list, label='test')
+plt.legend(loc = 1)
+plt.xlabel('epoch')
+plt.ylabel('f1')
+plt.title('F1 Score')
+
+if not os.path.exists(metrics_path):
+    plt.savefig(metrics_path)
+print("Done!!! Metrics of model is saved under name {}".format(NAME_METRICS+".png"))
