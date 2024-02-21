@@ -16,20 +16,29 @@ python preprocessing.py --name "yourname"
 The --name argument will determine the name of the processed data file. Our default value is "compas". For more details, please go to the preprocessing.py file and read the description.
 
 ## Blackbox models
-To apply LIME, we first need to have a blackbox model trained on the training data. Blackbox models will be implemented in the /blackbox folder. The first blackbox model is an artificial neural network created from the neural_network.py file under the name neural_network.pth, its metrics can be visualized in the metrics_neural_network.png file. Users can run this file again with the syntax:
+To apply LIME, we first need to have a black-box model trained on the training data. Blackbox models will be implemented in the /blackbox folder. The first black-box model is an artificial neural network created from the neural_network.py file under the name neural_network.pth, its metrics can be visualized in the metrics_neural_network.png file. Users can run this file again with the syntax:
 ```bash
 python neural_network.py --name "yourname" --hidden_size "your_hidden_size" --hidden_layers "your_hidden_layers" --lr "your_lr" --epoch "your_epoch" --wd "your_wd" --name_metrics "your_name_metrics"
 ```
-Default of the arguments:
+Default of the arguments are saved in ultis.py:
 
     --name: "neural_network" and our output files is neural_network.pth
     --hidden_size: 16
     --hidden_layers: 10
     --lr: 0.01
-    --epoch: 2000
+    --epoch: 500
     --wd: 1e-5
     --name_metrics: "metrics_neural_network" and the metrics of the model is saved under the name metrics_neural_network.png
 
+The second black-box model is the random forest created from the random_forest.py file under the name random_forest.pkl. Users can run this file again with the syntax:
+```bash
+python random_forest.py --name "yourname" --n_estimators "your_n_estimators"
+```
+Default of the arguments are saved in ultis.py:
+
+    --name: "random_forest" and our output files is random_forest.pkl
+    --n_estimators: 100png
+    
 ## References
 
 <a id="1">[1]</a>
