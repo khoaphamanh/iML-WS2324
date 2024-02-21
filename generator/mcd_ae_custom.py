@@ -13,25 +13,26 @@ import pandas as pd
 from torchinfo import summary
 from torch.utils.data import TensorDataset, DataLoader
 import numpy as np
+import matplotlib.pyplot as plt 
 
 """
-This file train the generator model as Monte Carlo Dropout Variational Auto Encoder (MCD VAE) on COMPAS dataset. The task is to generate data in same distribution of COMPAS dataset. Output of this file is a pretrained MCD VAE and the generated dataset. In this file we use the hyperparameter and structure of the MCD VAE from paper and repostory https://github.com/domenVres/Robust-LIME-SHAP-and-IME
+Because the model mcd_vae.pth in file mcd_vae.py and generated data gen_data.npy don't really have good performance. Therefore, we will customize this model using Auto Encoder, ReLU will be added in Decoder, there will be more Linear Layers in both Encoder and Decoder. We will customize the parameters again. We will customize the parameters and save them in utils.py.
 
-    python mcd_vae.py --name "yourname" --intermediate_dim "your_intermediate_dim" --latent_dim "your_latent_dim" --dropout "your_dropout" --batch_size "your_batch_size" --lr "your_lr" --epoch "your_epoch" --wd "your_wd" --landa "your_landa" --num_gen "your_num_gen" --name_gen "your_name_gen"
+    python mcd_vae.py --name "yourname" --intermediate_dim "your_intermediate_dim" --latent_dim "your_latent_dim" --dropout "your_dropout" --batch_size "your_batch_size" --lr "your_lr" --epoch "your_epoch" --wd "your_wd" --num_gen "your_num_gen" --name_gen "your_name_gen" --name_metrics "your_name_metrics"
     
 Then the output should be yourname.pth and your_gen_data.npy. Default of the arguments:
 
---name: "mcd_vae" and our output files is mcd_vae.pth
---intermediate_dim: 8
---latent_dim: 4
---dropout: 0.3
+--name: "mcd_ae_custom" and our output files is mcd_ae_custom.pth
+--intermediate_dim: 64
+--latent_dim: 2
+--dropout: 0.05
 --batch_size: 100
---lr: 0.001
+--lr: 0.01
 --epoch: 100
---wd: 1e-4
---landa: 1
---num_gen: 1000
---name_gen: "gen_data" and our generated data files is gen_data.npy shape (n_samples, num_gen+1, n_feature + 1)
+--wd: 1e-5
+--num_gen: 100
+--name_gen: "gen_data_custom" and our generated data files is gen_data_custom.npy shape (n_samples, num_gen+1, n_feature + 1)
+--name_metrics: "metrics_ae_custom" and the metrics of the model is saved under the name metrics_ae_custom.png
 """
 
 #fix parameter and constante
@@ -58,12 +59,12 @@ parse.add_argument("--epoch", type=int, default=utils.epoch_vae_custom,
                    help="epoch, default is {}".format(utils.epoch_vae_custom))
 parse.add_argument("--wd", type=float, default=utils.wd_vae_custom,
                    help="weight decay, default is {}".format(utils.wd_vae_custom))
-parse.add_argument("--landa", type=float, default=utils.landa_vae_custom,
-                   help="landa for Kullback Leibler Divergence in loss, default is {}".format(utils.landa_vae_custom))
 parse.add_argument("--num_gen", type=int, default=utils.num_gen,
                    help="number of generated samples from one real sample {}".format(utils.num_gen))
 parse.add_argument("--name_gen", type=str, default=utils.name_gen_custom,
                    help="name saved generated data {}".format(utils.name_gen_custom))
+parse.add_argument("--name_metrics", type=str, default=utils.name_metrics_custom,
+                   help="name the metrics {}".format(utils.name_metrics_custom))
 
 # read the argument
 args = parse.parse_args()
@@ -75,9 +76,9 @@ EPOCH = args.epoch
 WD = args.wd
 DROPOUT = args.dropout
 BATCH_SIZE = args.batch_size
-LANDA = args.landa
 NUM_GEN = args.num_gen
 NAME_GEN = args.name_gen
+NAME_METRICS = args.name_metrics
 
 #load data
 name_X = utils.name_preprocessed_data_X
@@ -130,7 +131,7 @@ test_loader = DataLoader(dataset=test_data,
                           shuffle=True)
 
 #create model
-class MonteCarloDropoutVariationalAutoEncoderCustom(nn.Module):
+class MonteCarloDropoutAutoEncoderCustom(nn.Module):
     def __init__(self, origin_dim: int, intermediate_dim: int, latent_dim:int, dropout:float):
             super().__init__()
             #encoder
@@ -141,11 +142,8 @@ class MonteCarloDropoutVariationalAutoEncoderCustom(nn.Module):
                 nn.ReLU(),
                 nn.Linear(in_features=intermediate_dim//2,out_features=intermediate_dim//4),
                 nn.ReLU(),
+                nn.Linear(in_features=intermediate_dim//4,out_features=latent_dim),
             )
-            
-            #latent mean and variance
-            self.latent_mean = nn.Linear(in_features=intermediate_dim//4,out_features=latent_dim)
-            self.latent_variance = nn.Linear(in_features=intermediate_dim // 4, out_features=latent_dim)
             
             #decoder 
             self.decoder = nn.Sequential(
@@ -161,27 +159,15 @@ class MonteCarloDropoutVariationalAutoEncoderCustom(nn.Module):
                 nn.Linear(in_features=intermediate_dim,out_features=origin_dim),
                 nn.Sigmoid(),
             )
-            
-    def encode_mean_variance (self,x: torch.tensor):
-        x = self.encoder(x)
-        mean, variance = self.latent_mean(x), self.latent_variance(x)
-        return mean, variance
-    
-    def reparameterization (self,mean: torch.tensor, variance: torch.tensor):
-        epsilon = torch.randn_like(variance)
-        z = mean + variance*epsilon
-        return z
 
     def forward(self,x: torch.tensor):
-        mean, variance = self.encode_mean_variance(x)
-        z = self.reparameterization(mean,torch.exp(variance*0.5))
-        x_ = self.decoder(z)
-        return x_, mean, variance
+        x = self.encoder(x)
+        x = self.decoder(x)
+        return x
     
     def latent_z (self, x: torch.tensor):
         with torch.inference_mode():
-            mean, variance = self.encode_mean_variance(x)
-            z = self.reparameterization(mean,torch.exp(variance*0.5))
+            z = self.encoder(x)
             return z
         
     def generate_data (self,x: np.array,num_gen:int, scaler:MinMaxScaler):
@@ -202,7 +188,7 @@ class MonteCarloDropoutVariationalAutoEncoderCustom(nn.Module):
         for i in range(num_gen):
             with torch.inference_mode():
                 self.train()
-                x_,_,_ = self.forward(x_tensor)
+                x_ = self.forward(x_tensor)
                 new_X.append(x_.numpy())
                 new_y.append(0)
         new_X = scaler.inverse_transform(new_X)
@@ -210,42 +196,29 @@ class MonteCarloDropoutVariationalAutoEncoderCustom(nn.Module):
         return new_samples
         
 #init model
-model = MonteCarloDropoutVariationalAutoEncoderCustom(origin_dim=ORIGIN_DIM,intermediate_dim=INTERMEDIATE_DIM,latent_dim=LATENT_DIM,dropout=DROPOUT)
+model = MonteCarloDropoutAutoEncoderCustom(origin_dim=ORIGIN_DIM,intermediate_dim=INTERMEDIATE_DIM,latent_dim=LATENT_DIM,dropout=DROPOUT)
 summary(model)
-
-#create custom loss
-class Loss (nn.Module):
-    def __init__(self):
-        super().__init__()
-
-    def forward(self,x_: torch.tensor, x: torch.tensor, mean: torch.tensor,variance: torch.tensor, lamda = 1):
-        BCE = nn.BCELoss(reduction="sum")
-        reconstruction_loss = BCE(x_,x)
-        KLD = -0.5 * torch.sum(1 + variance - mean.pow(2) - variance.exp())
-        return reconstruction_loss + lamda * KLD, reconstruction_loss, KLD
     
 # optimizer and loss
 optimizer = torch.optim.Adam(params=model.parameters(),weight_decay=WD,lr=LR)
-loss = Loss()
+loss = nn.BCELoss(reduction="sum")
 
 #train loop
+loss_train_list = []
+loss_test_list = []
 for ep in range(EPOCH):
     #train process
     loss_total_train = 0
-    loss_reconstruct_train = 0
-    loss_kld_train = 0
     model.train()
     
     for batch_train,(X_train,y_train) in enumerate(train_loader):
         
         #forward pass
-        X_pred_train,mean_train,variance_train = model(X_train)
+        X_pred_train = model(X_train)
         
         #calculate the loss
-        loss_train_total_this_batch, loss_train_reconsruct_this_batch, loss_train_kld_this_batch = loss(X_pred_train,X_train,mean_train,variance_train,LANDA)
+        loss_train_total_this_batch = loss(X_pred_train,X_train)
         loss_total_train = loss_total_train + loss_train_total_this_batch
-        loss_reconstruct_train = loss_reconstruct_train + loss_train_reconsruct_this_batch
-        loss_kld_train = loss_kld_train + loss_train_kld_this_batch
 
         #zero grad
         optimizer.zero_grad()
@@ -258,37 +231,33 @@ for ep in range(EPOCH):
 
     #calculate the mean of the loss
     loss_total_train = loss_total_train / len(train_loader)
-    loss_reconstruct_train = loss_reconstruct_train / len(train_loader)
-    loss_kld_train = loss_kld_train / len(train_loader)
-    
+
     #evaluate step
     loss_total_test = 0
-    loss_reconstruct_test = 0
-    loss_kld_test = 0
     model.eval()
 
     with torch.inference_mode():
         for batch_test,(X_test, y_test) in enumerate(test_loader):
             
             #forward pass
-            X_pred_test,mean_test,variance_test = model(X_test)
+            X_pred_test = model(X_test)
             
             #calculate the loss
-            loss_test_total_this_batch, loss_test_reconsruct_this_batch, loss_test_kld_this_batch = loss(X_pred_test,X_test,mean_test,variance_test,LANDA)
+            loss_test_total_this_batch= loss(X_pred_test,X_test)
             loss_total_test = loss_total_test + loss_test_total_this_batch
-            loss_reconstruct_test = loss_reconstruct_test + loss_test_reconsruct_this_batch
-            loss_kld_test = loss_kld_test + loss_test_kld_this_batch
 
         #calculate the mean of the loss
         loss_total_test = loss_total_test / len(test_loader)
-        loss_reconstruct_test = loss_reconstruct_test / len(test_loader)
-        loss_kld_test = loss_kld_test / len(test_loader)
-    
+
     #print the metrics
     if ep % 10 == 0 or ep == EPOCH-1:
-        print("epoch {}, loss total train {}, loss reconstruct train {}, loss kld train {}".format(ep,loss_total_train, loss_reconstruct_train, loss_kld_train))
-        print("epoch {}, loss total test {}, loss reconstruct test {}, loss kld test {}".format(ep,loss_total_test, loss_reconstruct_test, loss_kld_test))
+        print("epoch {}, loss total train {}".format(ep,loss_total_train))
+        print("epoch {}, loss total test {}".format(ep,loss_total_test))
         print()
+    
+    #store the metrics in list
+    loss_train_list.append(loss_total_train.detach().numpy())
+    loss_test_list.append(loss_total_test.detach().numpy())
 
 #save the model
 state_dict = model.state_dict()
@@ -297,6 +266,20 @@ model_path = os.path.join(current_path,NAME+".pth")
 if not os.path.exists(model_path):
     torch.save(state_dict,model_path)
 print("Done!!! Your model is saved under name {}".format(NAME+".pth"))
+
+#plot the metrics:
+plt.figure(figsize=(7,10))
+metrics_path = os.path.join(current_path,NAME_METRICS+".png")
+epoch_list = [i for i in range(EPOCH)]
+
+plt.plot(epoch_list,loss_train_list,label = 'train')
+plt.plot(epoch_list, loss_test_list, label='test')
+plt.legend(loc = 1)
+plt.xlabel('epoch')
+plt.ylabel('loss')
+plt.title('BCE Loss of custom MCD AE')
+plt.savefig(metrics_path)
+print("Done!!! Metrics of model is saved under name {}".format(NAME_METRICS+".png"))
 
 #generated data
 new_dataset = []
