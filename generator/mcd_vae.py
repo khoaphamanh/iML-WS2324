@@ -13,6 +13,7 @@ import pandas as pd
 from torchinfo import summary
 from torch.utils.data import TensorDataset, DataLoader
 import numpy as np
+import matplotlib.pyplot as plt 
 
 """
 This file train the generator model as Monte Carlo Dropout Variational Auto Encoder (MCD VAE) on COMPAS dataset. The task is to generate data in same distribution of COMPAS dataset. Output of this file is a pretrained MCD VAE and the generated dataset. In this file we use the hyperparameter and structure of the MCD VAE from paper and repostory https://github.com/domenVres/Robust-LIME-SHAP-and-IME
@@ -32,6 +33,7 @@ Then the output should be yourname.pth and your_gen_data.npy. Default of the arg
 --landa: 1
 --num_gen: 100
 --name_gen: "gen_data" and our generated data files is gen_data.npy shape (n_samples, num_gen+1, n_feature + 1)
+--name_metrics: "metrics_ae_custom" and the metrics of the model is saved under the name metrics_vae.png
 """
 
 #fix parameter and constante
@@ -64,6 +66,8 @@ parse.add_argument("--num_gen", type=int, default=utils.num_gen,
                    help="number of generated samples from one real sample {}".format(utils.num_gen))
 parse.add_argument("--name_gen", type=str, default=utils.name_gen,
                    help="name saved generated data {}".format(utils.name_gen))
+parse.add_argument("--name_metrics", type=str, default=utils.name_metrics_vae,
+                   help="name the metrics '{}'".format(utils.name_metrics_vae))
 
 # read the argument
 args = parse.parse_args()
@@ -78,6 +82,7 @@ BATCH_SIZE = args.batch_size
 LANDA = args.landa
 NUM_GEN = args.num_gen
 NAME_GEN = args.name_gen
+NAME_METRICS = args.name_metrics
 
 #load data
 name_X = utils.name_preprocessed_data_X
@@ -222,6 +227,14 @@ optimizer = torch.optim.Adam(params=model.parameters(),weight_decay=WD,lr=LR)
 loss = Loss()
 
 #train loop
+loss_train_list = []
+loss_reconstruct_train_list = []
+loss_kld_train_list = []
+
+loss_test_list = []
+loss_reconstruct_test_list = []
+loss_kld_test_list = []
+
 for ep in range(EPOCH):
     #train process
     loss_total_train = 0
@@ -283,6 +296,15 @@ for ep in range(EPOCH):
         print("epoch {}, loss total test {}, loss reconstruct test {}, loss kld test {}".format(ep,loss_total_test, loss_reconstruct_test, loss_kld_test))
         print()
 
+    #store the metrics in list
+    loss_train_list.append(loss_total_train.detach().numpy())
+    loss_reconstruct_train_list.append(loss_reconstruct_train.detach().numpy())
+    loss_kld_train_list.append(loss_kld_train.detach().numpy())
+    
+    loss_test_list.append(loss_total_test.detach().numpy())
+    loss_reconstruct_test_list.append(loss_reconstruct_test.detach().numpy())
+    loss_kld_test_list.append(loss_kld_test.detach().numpy())
+
 #save the model
 state_dict = model.state_dict()
 current_path = os.path.dirname(os.path.abspath(__file__))
@@ -290,6 +312,39 @@ model_path = os.path.join(current_path,NAME+".pth")
 if not os.path.exists(model_path):
     torch.save(state_dict,model_path)
 print("Done!!! Your model is saved under name {}".format(NAME+".pth"))
+
+#plot the metrics:
+plt.figure(figsize=(13,7))
+plt.suptitle("Metrics of MCD VAE")
+metrics_path = os.path.join(current_path,NAME_METRICS+".png")
+epoch_list = [i for i in range(EPOCH)]
+
+plt.subplot(1,3,1)
+plt.plot(epoch_list,loss_train_list,label = 'train')
+plt.plot(epoch_list, loss_test_list, label='test')
+plt.legend(loc = 1)
+plt.xlabel('epoch')
+plt.ylabel('loss')
+plt.title('Total loss of MCD VAE')
+
+plt.subplot(1,3,2)
+plt.plot(epoch_list,loss_reconstruct_train_list,label = 'train')
+plt.plot(epoch_list, loss_reconstruct_test_list, label='test')
+plt.legend(loc = 1)
+plt.xlabel('epoch')
+plt.ylabel('loss')
+plt.title('Reconstruct loss (BCE Loss)')
+
+plt.subplot(1,3,3)
+plt.plot(epoch_list,loss_kld_train_list,label = 'train')
+plt.plot(epoch_list, loss_kld_test_list, label='test')
+plt.legend(loc = 1)
+plt.xlabel('epoch')
+plt.ylabel('loss')
+plt.title('KLD Loss')
+
+plt.savefig(metrics_path)
+print("Done!!! Metrics of model is saved under name {}".format(NAME_METRICS+".png"))
 
 #generated data
 new_dataset = []
