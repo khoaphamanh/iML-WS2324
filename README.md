@@ -10,4 +10,12 @@ source activate iML
 ```
 
 ## Preprocessing 
-bước tiền xử lý đc làm ở trong dir data, giải thích cách preprocessing và cách dùng argpare. Nói về việc chỉ làm compas dataset
+According to recent studies [@author2022], this is how you cite in Markdown.
+
+
+@article{vrevs2021better,
+  title={Better sampling in explanation methods can prevent dieselgate-like deception},
+  author={Vre{\v{s}}, Domen and {\v{S}}ikonja, Marko Robnik},
+  journal={arXiv preprint arXiv:2101.11702},
+  year={2021}
+}
