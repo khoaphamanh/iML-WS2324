@@ -30,7 +30,7 @@ Then the output should be yourname.pth and your_gen_data.npy. Default of the arg
 --epoch: 100
 --wd: 1e-4
 --landa: 1
---num_gen: 1000
+--num_gen: 100
 --name_gen: "gen_data" and our generated data files is gen_data.npy shape (n_samples, num_gen+1, n_feature + 1)
 """
 
