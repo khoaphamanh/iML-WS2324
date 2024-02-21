@@ -9,14 +9,14 @@ conda env create -f environment.yml
 source activate iML
 ```
 ## Preprocessing 
-The raw data is downloaded in the [github](https://github.com/domenVres/Robust-LIME-SHAP-and-IME/tree/master/Fooling-LIME-SHAP/data) [[1]](#1) of the [article](https://arxiv.org/pdf/2101.11702.pdf) "Better sampling in explanation methods can prevent dieselgate-like deception" from D Vres, et al [[2]](#2). The raw data is saved in the /data folder under the name compas-scores-two-years.csv. Initially we will preprocess this data. Only 7 features will be selected including "age, "two_year_recid", "c_charge_degree", "sex", "priors_count", "length_of_stay", "race". Label will be selected from the "score_text" column. File preprocessing.py perform this task. The output will be 2 files compas_X.csv, containing the processed features and compas_y.csv is the label. Users can run this file again with the syntax:
+The raw data is downloaded in the [github](https://github.com/domenVres/Robust-LIME-SHAP-and-IME/tree/master/Fooling-LIME-SHAP/data) [[1]](#1) of the [article](https://arxiv.org/pdf/2101.11702.pdf) "Better sampling in explanation methods can prevent dieselgate-like deception" from D Vres, et al [[2]](#2). The raw data is saved in the /data folder under the name compas-scores-two-years.csv. Initially we will preprocess this data. Only 7 features will be selected including "age, "two_year_recid", "c_charge_degree", "sex", "priors_count", "length_of_stay", "race". Label will be selected from the "score_text" column. File preprocessing.py perform this task. The output will be 2 files compas_X.csv, containing the processed features and compas_y.csv is the label. Users can run this file again with the syntax from argparse:
 ```bash
 python preprocessing.py --name "yourname" 
 ```
 The --name argument will determine the name of the processed data file. Our default value is "compas". For more details, please go to the preprocessing.py file and read the description.
 
 ## Blackbox models
-To apply LIME, we first need to have a black-box model trained on the training data. Blackbox models will be implemented in the /blackbox folder. The first black-box model is an artificial neural network created from the neural_network.py file under the name neural_network.pth, its metrics can be visualized in the metrics_neural_network.png file. Users can run this file again with the syntax:
+To apply LIME, we first need to have a black-box model trained on the training data. Blackbox models will be implemented in the /blackbox folder. The first black-box model is an artificial neural network created from the neural_network.py file under the name neural_network.pth, its metrics can be visualized in the metrics_neural_network.png file. Users can run this file again with the syntax from argparse:
 ```bash
 python neural_network.py --name "yourname" --hidden_size "your_hidden_size" --hidden_layers "your_hidden_layers" --lr "your_lr" --epoch "your_epoch" --wd "your_wd" --name_metrics "your_name_metrics"
 ```
@@ -30,7 +30,7 @@ Default of the arguments are saved in ultis.py:
     --wd: 1e-5
     --name_metrics: "metrics_neural_network" and the metrics of the model is saved under the name metrics_neural_network.png
 
-The second black-box model is the random forest created from the random_forest.py file under the name random_forest.pkl. Users can run this file again with the syntax:
+The second black-box model is the random forest created from the random_forest.py file under the name random_forest.pkl. Users can run this file again with the syntax from argparse:
 ```bash
 python random_forest.py --name "yourname" --n_estimators "your_n_estimators"
 ```
@@ -38,7 +38,7 @@ Default of the arguments are saved in ultis.py:
 
     --name: "random_forest" and our output files is random_forest.pkl
     --n_estimators: 100png
-    
+
 ## References
 
 <a id="1">[1]</a>
