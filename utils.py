@@ -37,3 +37,5 @@ batch_size_vae = 100
 lr_vae = 0.001
 wd_vae = 1e-4
 landa_vae = 1
+num_gen = 100
+name_gen = "gen_data"
