@@ -15,11 +15,11 @@ from torch.utils.data import TensorDataset, DataLoader
 import numpy as np
 
 """
-This file train the generator model as Monte Carlo Dropout Variational Auto Encoder (MCD VAE) on COMPAS dataset. The task is to generate data in same distribution of COMPAS dataset. Output of this file is a pretrained MCD VAE and the generated dataset.
+This file train the generator model as Monte Carlo Dropout Variational Auto Encoder (MCD VAE) on COMPAS dataset. The task is to generate data in same distribution of COMPAS dataset. Output of this file is a pretrained MCD VAE and the generated dataset. In this file we use the hyperparameter and structure of the MCD VAE from paper and repostory https://github.com/domenVres/Robust-LIME-SHAP-and-IME
 
     python mcd_vae.py --name "yourname" --intermediate_dim "your_intermediate_dim" --latent_dim "your_latent_dim" --dropout "your_dropout" --batch_size "your_batch_size" --lr "your_lr" --epoch "your_epoch" --wd "your_wd" --landa "your_landa" --num_gen "your_num_gen" --name_gen "your_name_gen"
     
-Then the output should be yourname.pth. Default of the arguments:
+Then the output should be yourname.pth and your_gen_data.npy. Default of the arguments:
 
 --name: "mcd_vae" and our output files is mcd_vae.pth
 --intermediate_dim: 8
@@ -279,8 +279,8 @@ for ep in range(EPOCH):
     
     #print the metrics
     if ep % 10 == 0 or ep == EPOCH-1:
-        print("epoch {}, loss total {}, loss reconstruct {}, loss kld {}".format(ep,loss_total_train, loss_reconstruct_train, loss_kld_train))
-        print("epoch {}, loss total {}, loss reconstruct {}, loss kld {}".format(ep,loss_total_test, loss_reconstruct_test, loss_kld_test))
+        print("epoch {}, loss total train {}, loss reconstruct train {}, loss kld train {}".format(ep,loss_total_train, loss_reconstruct_train, loss_kld_train))
+        print("epoch {}, loss total test {}, loss reconstruct test {}, loss kld test {}".format(ep,loss_total_test, loss_reconstruct_test, loss_kld_test))
         print()
 
 #save the model
@@ -294,14 +294,13 @@ print("Done!!! Your model is saved under name {}".format(NAME+".pth"))
 #generated data
 new_dataset = []
 for x in X:
-    x = scaler.fit_transform(x.reshape(1, -1)).flatten()
+    x = scaler.transform(x.reshape(1, -1)).flatten()
     new_samples = model.generate_data(x = x,num_gen=NUM_GEN,scaler=scaler)
     new_dataset.append(new_samples)
 new_dataset = np.array(new_dataset)
-print("new_dataset shape:", new_dataset.shape)
 
 #save generated data
 new_dataset_path = os.path.join(current_path,NAME_GEN+".npy")
 if not os.path.exists(new_dataset_path):
     np.save(new_dataset_path,new_dataset)
-print("Done!!! Your generated datasets is saved under name {}".format(NAME_GEN+".npy"))
+print("Done!!! Your generated datasets is saved under name {} with shape {}".format(NAME_GEN+".npy", new_dataset.shape))
