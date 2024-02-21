@@ -63,7 +63,7 @@ parse.add_argument("--landa", type=float, default=utils.landa_vae,
 parse.add_argument("--num_gen", type=int, default=utils.num_gen,
                    help="number of generated samples from one real sample {}".format(utils.num_gen))
 parse.add_argument("--name_gen", type=str, default=utils.name_gen,
-                   help="name savec generated data {}".format(utils.name_gen))
+                   help="name saved generated data {}".format(utils.name_gen))
 
 # read the argument
 args = parse.parse_args()
