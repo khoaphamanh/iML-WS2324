@@ -18,9 +18,10 @@ hidden_size = 16
 hidden_layers = 10
 output_size = 1
 lr_blackbox = 0.01
-epoch_blackbox = 2000
+epoch_blackbox = 500
 wd_blackbox = 1e-5
 name_blackbox_nn = "neural_network"
+name_metrics_blackbox_nn = "metrics_neural_network"
 
 #Parameter for black-box model as neuralnetwork
 name_blackbox_rf = "random_forest"
