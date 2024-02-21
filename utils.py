@@ -41,6 +41,7 @@ lr_vae = 0.001
 wd_vae = 1e-4
 landa_vae = 1
 name_gen = "gen_data"
+name_metrics_vae= "metrics_vae"
 
 #Parameter for generator as MCD_VAE custom
 name_vae_custom = "mcd_ae_custom"
