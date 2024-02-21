@@ -22,13 +22,13 @@ python neural_network.py --name "yourname" --hidden_size "your_hidden_size" --hi
 ```
 Default of the arguments:
 
-    + --name: "neural_network" and our output files is neural_network.pth
-    + --hidden_size: 16
-    + --hidden_layers: 10
-    + --lr: 0.01
-    + --epoch: 2000
-    + --wd: 1e-5
-    + --name_metrics: "metrics_neural_network" and the metrics of the model is saved under the name metrics_neural_network.png
+    --name: "neural_network" and our output files is neural_network.pth
+    --hidden_size: 16
+    --hidden_layers: 10
+    --lr: 0.01
+    --epoch: 2000
+    --wd: 1e-5
+    --name_metrics: "metrics_neural_network" and the metrics of the model is saved under the name metrics_neural_network.png
 
 ## References
 
