@@ -41,6 +41,7 @@ SEED = utils.seed
 torch.manual_seed(SEED)
 ORIGIN_DIM = utils.origin_dim_vae
 TEST_SIZE = utils.test_size
+CATEGORICAL_FEATURE_INDEX = utils.categorical_feature_index
 
 # add argument
 parse = argparse.ArgumentParser()
@@ -182,15 +183,16 @@ class MonteCarloDropoutVariationalAutoEncoder(nn.Module):
             z = self.reparameterization(mean,torch.exp(variance*0.5))
             return z
         
-    def generate_data (self,x: np.array,num_gen:int, scaler:MinMaxScaler):
+    def generate_data (self,x: np.array,num_gen:int, scaler:MinMaxScaler, categorical_feature_index: list):
         
         """
-        This function creates fake samples with label 0. True sample will have label 1.
+        This function creates fake samples with label 0. True sample will have label 1. The categorical features should be rounded between 0 and 1.
         
         Parameters:
             x (torch.tensor): true sample
             num_gen (int): number of fake samples
             scaler (sklearn.MinMaxScaler): scaler of the train data
+            categorical_feature_index (list): index of the categorcal feature 
         Returns:
             new_samples (np.array): array shape (num_gen + 1, n_feature + 1) contains true sample at row 0, fake samples at index row 1 to (num_gen-1). Last column is the label.
         """
@@ -199,10 +201,23 @@ class MonteCarloDropoutVariationalAutoEncoder(nn.Module):
         new_y = [1]
         for i in range(num_gen):
             with torch.inference_mode():
+                # reconstruct 
                 self.train()
                 x_,_,_ = self.forward(x_tensor)
-                new_X.append(x_.numpy())
+                x_ = x_.numpy()
+                
+                #round the categorical feature
+                for i in categorical_feature_index:
+                    #rounded the catorical feature between value 0 and 1
+                    cat_feat = x_[i]
+                    cat_feat = np.round(np.clip(cat_feat,0,1))
+                    x_[i] = cat_feat
+                
+                #save it to list
+                new_X.append(x_)
                 new_y.append(0)
+                
+        #invers scaler        
         new_X = scaler.inverse_transform(new_X)
         new_samples = np.column_stack((np.array(new_X), np.array(new_y))) 
         return new_samples
@@ -351,7 +366,7 @@ print("Done!!! Metrics of model is saved under name {}".format(NAME_METRICS+".pn
 new_dataset = []
 for x in X:
     x = scaler.transform(x.reshape(1, -1)).flatten()
-    new_samples = model.generate_data(x = x,num_gen=NUM_GEN,scaler=scaler)
+    new_samples = model.generate_data(x = x,num_gen=NUM_GEN,scaler=scaler,categorical_feature_index=CATEGORICAL_FEATURE_INDEX)
     new_dataset.append(new_samples)
 new_dataset = np.array(new_dataset)
 
