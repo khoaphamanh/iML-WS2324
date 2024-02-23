@@ -13,6 +13,9 @@ name_preprocessed_data_y = "compas_y.csv"
 feature_name = ['age', 'two_year_recid', 'priors_count', 'length_of_stay', 'c_charge_degree_F', 'c_charge_degree_M', 'sex_Female', 'sex_Male', 'race']
 categorical_feature = ["two_year_recid", "c_charge_degree_F", "c_charge_degree_M" ,"sex_Female","sex_Male","race"]
 categorical_feature_index = [1, 4, 5, 6, 7, 8 ]
+numerical_feature = ["age", "priors_count", "length_of_stay", "unrelated_column_one", "unrelated_column_two"]
+numerical_feature_index = [0, 2, 3]
+unrelated_index = [9, 10]
 
 #Parameter for black-box model as neuralnetwork
 test_size = 0.1
@@ -58,3 +61,8 @@ wd_vae_custom = 1e-5
 landa_vae_custom = 0.1
 name_gen_custom = "gen_data_custom"
 name_metrics_custom = "metrics_ae_custom"
+
+#lime
+num_pertube = 5000
+pertube_std = 0.3
+
