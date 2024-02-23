@@ -11,8 +11,8 @@ name_raw_data = "compas-scores-two-years.csv"
 name_preprocessed_data_X = "compas_X.csv"
 name_preprocessed_data_y = "compas_y.csv"
 feature_name = ['age', 'two_year_recid', 'priors_count', 'length_of_stay', 'c_charge_degree_F', 'c_charge_degree_M', 'sex_Female', 'sex_Male', 'race']
-feature_categorical = ["two_year_recid", "c_charge_degree_F", "c_charge_degree_M" ,"sex_Female","sex_Male","race"]
-feature_categorical_index = [1, 4, 5, 6, 7, 8 ]
+categorical_feature = ["two_year_recid", "c_charge_degree_F", "c_charge_degree_M" ,"sex_Female","sex_Male","race"]
+categorical_feature_index = [1, 4, 5, 6, 7, 8 ]
 
 #Parameter for black-box model as neuralnetwork
 test_size = 0.1
