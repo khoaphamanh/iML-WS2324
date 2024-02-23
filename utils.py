@@ -31,7 +31,7 @@ n_estimators_blackbox = 100
 name_vae = "mcd_vae"
 origin_dim_vae = 9
 intermediate_dim_vae = 8
-num_gen = 100
+num_gen = 2
 batch_size_vae = 100
 
 latent_dim_vae = origin_dim_vae // 2
