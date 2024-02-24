@@ -1,14 +1,18 @@
-from sklearn.linear_model import LogisticRegression,Ridge
+from sklearn.linear_model import LogisticRegression
 import numpy as np
 import os
 import sys
 project_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_path)
+
 import utils
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import argparse
 import joblib
+from generator.perturb import pertube_data_generator
+from generator.mcd_ae_custom import MonteCarloDropoutAutoEncoderCustom
+from generator.mcd_vae import MonteCarloDropoutVariationalAutoEncoder
 
 #constante
 SEED = utils.seed
@@ -58,7 +62,7 @@ def pertube_data (X:np.array,x:np.array,numerical_feature_index: list,num_pertub
         num_pertube (int): number of neighbor points
         pertube_std (float): standivation of gausian noise
     Returns:
-	    new_datasets (np.array): real data and pertube samples shape (n_samples, num_pertube + 1, n_feature). num_pertube + 1 contains 1 real sample and num_pertube sample from Gaussian nois
+	    new_X (np.array): real data and pertube samples shape (n_samples, num_pertube + 1, n_feature). num_pertube + 1 contains 1 real sample and num_pertube sample from Gaussian nois
     """
     
     #Normalize the data using standardize
