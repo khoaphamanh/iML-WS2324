@@ -25,44 +25,50 @@ X = pd.read_csv(path_X,index_col=0).to_numpy()
 y = pd.read_csv(path_y,index_col=0).to_numpy().flatten()
 
 # pertube data
-def pertube_data_generator (X:np.array,numerical_feature_index: list,num_pertube:int,pertube_std:float):
+def pertube_data_generator (X:np.array,x:np.array,numerical_feature_index: list,num_pertube:int,pertube_std:float):
     """ 
     This function will create neighbor points by adding Gaussian noise around a single instance. 
     
     Parameters:
 	    X (np.array): datasets
+        x (np.array): a single instance
         num_pertube (int): number of neighbor points
         pertube_std (float): standivation of gausian noise
+        scaler (StandardScaler): standardize scaler
     Returns:
-	    new_datasets (np.array): real data and pertube samples shape (n_samples, num_pertube + 1, n_feature). num_pertube + 1 contains 1 real sample and num_pertube sample from Gaussian nois
+	    new_samples (np.array): real data and pertube samples shape (num_pertube + 1, n_feature). num_pertube + 1 contains 1 real sample and num_pertube sample from Gaussian nois
     """
     
     #Normalize the data using standardize
     scaler = StandardScaler()
-    X = scaler.fit_transform(X)
+    scaler.fit(X)
+    x = scaler.transform(x.reshape(1, -1)).flatten()
     
-    #new dataset
-    new_datasets = []
-
-    for x in X:
-        new_X = []
-        new_X.append(x)
-        
-        for n in range(num_pertube):
-            x_ = np.array([x[i] + np.random.normal(0,pertube_std,1)[0] if i in numerical_feature_index else x[i]  for i in range(len(x))])
-            new_X.append(x_)
-        new_X = np.array(new_X)
-        new_X = scaler.inverse_transform(new_X)
-        
-        new_datasets.append(new_X)
+    #a list contains and sampled x
+    new_X = [x]
+    new_y = [1]
     
-    return np.array(new_datasets)
+    for n in range(num_pertube):
+        x_ = np.array([x[i] + np.random.normal(0,pertube_std,1)[0] if i in numerical_feature_index else x[i]  for i in range(len(x))])
+        new_X.append(x_)
+        new_y.append(0)
+        
+    new_X = np.array(new_X)
+    new_X = scaler.inverse_transform(new_X)
+    new_samples = np.column_stack ((new_X,new_y))
+    return new_samples
 
 #run localy in this file
 if __name__ == "__main__":
     
     #generate pertubed data
-    new_dataset = pertube_data_generator(X=X,numerical_feature_index=NUMERICAL_FEATURE_INDEX,num_pertube=NUM_GEN,pertube_std=PERTUBE_STD)
+    new_dataset = []
+    for x in X:
+        new_samples = pertube_data_generator(X = X,x=x,numerical_feature_index=NUMERICAL_FEATURE_INDEX,num_pertube=NUM_GEN,pertube_std=PERTUBE_STD)
+        new_dataset.append(new_samples)
+    new_dataset = np.array(new_dataset)
+    print("new_dataset shape:", new_dataset.shape)
+    print("new_dataset:", new_dataset)
     
     #saved the generated data
     current_path = os.path.dirname(os.path.abspath(__file__))
