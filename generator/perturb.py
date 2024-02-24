@@ -67,8 +67,6 @@ if __name__ == "__main__":
         new_samples = pertube_data_generator(X = X,x=x,numerical_feature_index=NUMERICAL_FEATURE_INDEX,num_pertube=NUM_GEN,pertube_std=PERTUBE_STD)
         new_dataset.append(new_samples)
     new_dataset = np.array(new_dataset)
-    print("new_dataset shape:", new_dataset.shape)
-    print("new_dataset:", new_dataset)
     
     #saved the generated data
     current_path = os.path.dirname(os.path.abspath(__file__))
