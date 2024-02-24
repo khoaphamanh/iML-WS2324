@@ -8,6 +8,7 @@ import utils
 import pandas as pd
 from sklearn.preprocessing import StandardScaler, MinMaxScaler
 import argparse
+import joblib
 
 #constante
 SEED = utils.seed
@@ -103,14 +104,14 @@ class BlackBoxModel(nn.Module):
         x = self.output_layer(x)
         return x
     
-    def predict_proba(self,x:np.array,prob = True):
+    def predict(self,x:np.array,prob = True):
         x = torch.tensor(x).float()
         with torch.inference_mode():
             out =  self.forward(x)
             if prob:
-                return torch.sigmoid(out).numpy()
+                return torch.sigmoid(out).numpy().ravel().astype(int)
             else:
-                return out.numpy()
+                return out.numpy().ravel()
 
 #pertube data
 scaler = StandardScaler()
@@ -132,7 +133,7 @@ class LimeCustom:
         """
         self.black_box = blackbox
         
-    def get_lime (self, inter_model: LogisticRegression, instance: np.array, sampled_instance: np.array, seed:int,sigma = None):
+    def get_lime (self, instance: np.array, sampled_instance: np.array, seed:int,sigma = None):
         """
         In this method we will apply LIME to explane an instance using interpretable model
         
@@ -145,10 +146,27 @@ class LimeCustom:
         
         #calculate phi
         X, phi = self.weights(instance=instance,sampled_instance=sampled_instance,sigma=sigma)
+        #print("X shape:", X.shape)
         
         #train the interpretable mode
-        label = self.black_box.predict()
-        inter_model.
+        inter_model = LogisticRegression(random_state=seed)
+        scaler_path = os.path.join(project_path,"blackbox","mms_scaler.bin")
+        scaler = joblib.load(scaler_path)
+        
+        X = scaler.transform(X)
+        #print("X:", X[10:20])
+        y = self.black_box.predict(X)
+        print("y:", y)
+        inter_model.fit(X,y, sample_weight=phi)
+
+        #contribution each feature to the result
+        weights = inter_model.coef_
+        print("weights:", weights)
+        bias = inter_model.intercept_
+        print("bias:", bias)
+        contribution = instance.reshape(1,-1) * weights
+        
+        return inter_model, contribution
 
     def weights(self,instance:np.array, sampled_instance: np.array, sigma = None ):
         """
@@ -174,19 +192,20 @@ class LimeCustom:
 
         return sampled_instance, phi
     
-    def 
-    
-    
 test = LimeCustom(blackbox=model)
 inter_model = LogisticRegression()
-x = X[0]
+x = X[50]
 sampled_instance = pertube_data(X,x,NUMERICAL_FEATURE_INDEX,NUM_PERTUBE,PERTUBE_STD)
 #print("sampled_instance:", sampled_instance)
 #sampled_instance = np.concatenate((x.reshape(1,-1),pertube_data(X,x,NUMERICAL_FEATURE_INDEX,NUM_PERTUBE,PERTUBE_STD)),axis=0) 
 #print("sampled_instance:", sampled_instance)
 #print("sampled_instance:", sampled_instance)
 # lemon = test.get_lime(inter_model=inter_model,instance=x,sampled_instance=sampled_instance)
-w = test.weights(instance=x,sampled_instance=sampled_instance)
+_, w = test.weights(instance=x,sampled_instance=sampled_instance)
 #print("w shape:", w.shape)
-print("w:", w)
+#print("w:", w)
+
+model ,contribution = test.get_lime(instance=x,sampled_instance=sampled_instance,seed=SEED)
+print("contribution:", contribution)
+
         
