@@ -2,6 +2,7 @@ import os
 import sys
 project_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_path)
+
 import utils
 import torch
 import torch.nn as nn
@@ -110,7 +111,7 @@ class MonteCarloDropoutAutoEncoderCustom(nn.Module):
             z = self.encoder(x)
             return z
         
-    def generate_data (self,x: np.array,num_gen:int, scaler:MinMaxScaler, categorical_feature_index: list):
+    def generate_data (self,x: np.array,num_gen:int, scaler:MinMaxScaler, categorical_feature_index: list, return_label = True):
         
         """
         This function creates fake samples with label 0. True sample will have label 1.
@@ -146,8 +147,15 @@ class MonteCarloDropoutAutoEncoderCustom(nn.Module):
         
         # inverse transform
         new_X = scaler.inverse_transform(new_X)
-        new_samples = np.column_stack((np.array(new_X), np.array(new_y))) 
-        return new_samples
+        
+        # return label real and fake
+        if return_label == True:
+            new_samples = np.column_stack((np.array(new_X), np.array(new_y))) 
+            return new_samples
+        
+        # return only sampled x
+        else:
+            return new_X
         
 #run localy in this file
 if __name__ == "__main__":
