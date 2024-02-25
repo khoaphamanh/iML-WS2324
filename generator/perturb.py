@@ -25,7 +25,7 @@ X = pd.read_csv(path_X,index_col=0).to_numpy()
 y = pd.read_csv(path_y,index_col=0).to_numpy().flatten()
 
 # pertube data
-def pertube_data_generator (X:np.array,x:np.array,numerical_feature_index: list,num_pertube:int,pertube_std:float):
+def pertube_data_generator (X:np.array,x:np.array,numerical_feature_index: list,num_pertube:int,pertube_std:float, return_label = True):
     """ 
     This function will create neighbor points by adding Gaussian noise around a single instance. 
     
@@ -55,9 +55,16 @@ def pertube_data_generator (X:np.array,x:np.array,numerical_feature_index: list,
         
     new_X = np.array(new_X)
     new_X = scaler.inverse_transform(new_X)
-    new_samples = np.column_stack ((new_X,new_y))
-    return new_samples
-
+    
+    # return label real and fake
+    if return_label == True:
+        new_samples = np.column_stack((np.array(new_X), np.array(new_y))) 
+        return new_samples
+    
+    # return only sampled x
+    else:
+        return new_X
+    
 #run localy in this file
 if __name__ == "__main__":
     
