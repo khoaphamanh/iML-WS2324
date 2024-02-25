@@ -162,42 +162,26 @@ class AdversarialModel:
         
         # put the predicted real samples to bias mode and fake samples to unbias model
         X_bias, y_bias = self.bias_model(X_bias=X_bias)
-        print("X_bias:", y_bias)
-        print("X_bias shape:", y_bias.shape)
         X_unbias, y_unbias = self.unbias_model(X_unbias=X_unbias)
-        print("X_unbias:", y_unbias)
-        print("X_unbias shape:", y_unbias.shape)
         
         #concat back to 1 datasets
         X = np.concatenate((X_bias,X_unbias),axis=0)
-        print("X:", X)
         y = np.concatenate((y_bias,y_unbias))
         
         return X, y
 
-    
 #run localy in this file
 if __name__ == "__main__":
     
     #init adversarial model
     adv = AdversarialModel(n_estimators=N_ESTIMATORS,name_classifier=NAME_CLASSIFIER,test_size=TEST_SIZE,seed=SEED,race_feature_index=RACE_FEATURE_INDEX,unrelated_feature_index=UNRELATED_FEATURE_INDEX)
 
-    #load data
-    import pandas as pd
-    name_X = utils.name_preprocessed_data_X
-    name_y = utils.name_preprocessed_data_y
-    path_X = os.path.join(project_path,"data",name_X)
-    path_y = os.path.join(project_path,"data",name_y)
-    X = pd.read_csv(path_X,index_col=0).to_numpy()
-    y = pd.read_csv(path_y,index_col=0).to_numpy().flatten()
+    #train and saved classifier on generated data from VAE
+    adv.train_classifier_on_sampled_data(input_data=NAME_GEN_VAE)
     
-    # evaluate 
-    test1, test2 = adv.evaluate(input_data=NAME_GEN_CUSTOM,X=X)
-    print("test1 shape:", test1.shape)
-    print("test1 shape:", test2.shape)
+    #train and saved classifier on generated data from VAE
+    adv.train_classifier_on_sampled_data(input_data=NAME_GEN_CUSTOM)
     
-    
-    #print("test shape:", test.shape)
-    #print("test:", test)
-    #print("test unique:", np.unique(test,return_counts=True))
+    #train and saved classifier on generated data from VAE
+    adv.train_classifier_on_sampled_data(input_data=NAME_GEN_PERTURB)
     
