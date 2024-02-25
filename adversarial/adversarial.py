@@ -21,9 +21,11 @@ NAME_GEN_PERTURB = utils.name_pertube_gen
 N_ESTIMATORS = utils.n_estimators_classifier
 TEST_SIZE = utils.test_size
 NAME_CLASSIFIER = utils.name_classifier
+RACE_FEATURE_INDEX = utils.race_feature_index
+UNRELATED_FEATURE_INDEX = utils.unrelated_feature_index
 
 class AdversarialModel:
-    def __init__(self,n_estimators:int,name_classifier:str, test_size:float, seed:int):
+    def __init__(self,n_estimators:int,name_classifier:str, test_size:float, seed:int, race_feature_index:int,unrelated_feature_index:int):
         """
         Init (hyper)parameter of the adversarial model
         
@@ -32,12 +34,16 @@ class AdversarialModel:
             test_size (float): test size in train test split
             name_classifier (str): name of the classifier
             seed (int): randomm seed
+            race_feature_index (int): index of race feature (bias feature)
+            unrelated_feature_index (list): index of unrelated feature
         """
         self.n_estimators = n_estimators
         self.name_classifier = name_classifier
         self.test_size = test_size
         self.seed = seed
-    
+        self.race_feature_index = race_feature_index
+        self.unrelated_feature_index = unrelated_feature_index
+        
     def train_classifier_on_sampled_data (self, input_data:str):
         """
         Train the RandomForestClassifier on the sampled data and save it.
@@ -58,7 +64,7 @@ class AdversarialModel:
         all_x = np.concatenate((all_x, unrelated_column_one, unrelated_column_two), axis=2)
         
         # Split the data into train and test dataset
-        xtrain, xtest, ytrain, ytest = train_test_split(all_x, all_y, test_size=self.test_size)
+        xtrain, xtest, ytrain, ytest = train_test_split(all_x, all_y, test_size=self.test_size,random_state=self.seed)
         xtrain_flatten = xtrain.reshape(-1,11)
         ytrain_flatten = ytrain.reshape(-1,1).ravel()
         xtest_flatten = xtest.reshape(-1,11)
@@ -90,21 +96,49 @@ class AdversarialModel:
         if not os.path.exists(model_path):
             joblib.dump(sampled_data_identifier,model_path)
 
-        #return sampled_data_identifier
-    
-    def evaluated_on_classifier (self, input_data:str, X:np.array):
+    def bias_model (self, X_bias: np.array):
         """
-        Load pretrained model on input_name dataset and evaluate unseen data 
+        Bias model return the label (0) if instance has the feature race equal to African-Black (0), else 1
+        
+    	Parameters:
+            X_bias (np.array): unseen data that classified as real samples (label 1)
+        Returns:
+            X_bias (np.array): unseen data
+            y_bias (np.array): 0 if race equal to African-Black else 1
+        """
+        #get label
+        y_bias = np.where(X_bias[:,self.race_feature_index]==0,0,1)
+        
+        return X_bias, y_bias
+        
+    def unbias_model(self, X_unbias: np.array):
+        """
+        Unbias model return the label (0) if instance has the feature race equal to African-Black (0), else 1
+            
+        Parameters:
+            X_unbias (np.array): unseen data that classified as fake samples (label 0)
+        Returns:
+            X_bias (np.array): unseen data
+            y_unbias (np.array): xor logic of y unrelated 1 and y unrelated 2, y unrelated equal to the value of the unrelated feature
+        """
+        # Unbiased model with two unrelated features
+        y_unrelated_1 = np.where(X_unbias[:, self.unrelated_feature_index[0]] == 1, 1, 0)
+        y_unrelated_2 = np.where(X_unbias[:, self.unrelated_feature_index[1]] == 1, 1, 0)
+        y_unbias = np.logical_xor(y_unrelated_1, y_unrelated_2).astype(int)
+    
+        return X_unbias, y_unbias
+        
+    def evaluate (self, input_data:str, X:np.array):
+        """
+        Load pretrained model on input_name dataset and evaluate unseen data to check if the sample real hay fake. Real sample goes to bias model, which will get the label 0 if the feature race equal to African-Black. Fake samples will go to unbias model, which will get logic xor of value of feature unrelated 1 and 2
         
     	Parameters:
             input_data (str): name of the generated data in directory /generator.
             name_classifier (str): name of the classfier
             X (np.array): unseen dataset
         Returns:
-            X_train (torch.tensor): train data
-            X_test (torch.tensor): test data
-            y_train (torch.tensor): train label
-            y_test (torch.tensor): test label
+            X (torch.tensor): concatenate of X_bias and X_unbias 
+            y (torch.tensor): concatenate of y_bias and y_unbias 
         """
         #load model
         name_model = self.name_classifier + "_" + input_data + ".pkl"
@@ -122,37 +156,31 @@ class AdversarialModel:
         # predict real fake sample
         y_pred = model.predict(X)
         
-        return y_pred
+        #sort to bias and unbias model
+        X_bias = X[y_pred==1]
+        X_unbias = X[y_pred==0]
         
-    def bias_model (self, X:np.array):
-        """
-        Bias model return the label (0) if instance has the feature race equal to African-Black (0), else 1
+        # put the predicted real samples to bias mode and fake samples to unbias model
+        X_bias, y_bias = self.bias_model(X_bias=X_bias)
+        print("X_bias:", y_bias)
+        print("X_bias shape:", y_bias.shape)
+        X_unbias, y_unbias = self.unbias_model(X_unbias=X_unbias)
+        print("X_unbias:", y_unbias)
+        print("X_unbias shape:", y_unbias.shape)
         
-    	Parameters:
-            data (np.array): data
-        """
+        #concat back to 1 datasets
+        X = np.concatenate((X_bias,X_unbias),axis=0)
+        print("X:", X)
+        y = np.concatenate((y_bias,y_unbias))
+        
+        return X, y
 
-def one_hot_encode(y):
-    y_hat_one_hot = np.zeros((len(y), 2))
-    y_hat_one_hot[np.arange(len(y)), y] = 1
-    return y_hat_one_hot
-
-# Bias (racist) model
-class biased_model_f:
-    # Decision rule: classify negatively (0) if race is black, 
-    # and positively (1) if race is others
-    def predict(self,X):
-        return np.array([0 if x[8] == 0 else 1 for x in X])
-    def predict_proba(self, X): 
-        return one_hot_encode(self.predict(X))
-    def score(self, X,y):
-        return np.sum(self.predict(X)==y) / len(X)
-
+    
 #run localy in this file
 if __name__ == "__main__":
     
     #init adversarial model
-    adv = AdversarialModel(n_estimators=N_ESTIMATORS,name_classifier=NAME_CLASSIFIER,test_size=TEST_SIZE,seed=SEED)
+    adv = AdversarialModel(n_estimators=N_ESTIMATORS,name_classifier=NAME_CLASSIFIER,test_size=TEST_SIZE,seed=SEED,race_feature_index=RACE_FEATURE_INDEX,unrelated_feature_index=UNRELATED_FEATURE_INDEX)
 
     #load data
     import pandas as pd
@@ -164,8 +192,12 @@ if __name__ == "__main__":
     y = pd.read_csv(path_y,index_col=0).to_numpy().flatten()
     
     # evaluate 
-    test = adv.evaluated_on_classifier(input_data=NAME_GEN_CUSTOM,X=X)
-    print("test shape:", test.shape)
-    print("test:", test)
-    print("test unique:", np.unique(test,return_counts=True))
+    test1, test2 = adv.evaluate(input_data=NAME_GEN_CUSTOM,X=X)
+    print("test1 shape:", test1.shape)
+    print("test1 shape:", test2.shape)
+    
+    
+    #print("test shape:", test.shape)
+    #print("test:", test)
+    #print("test unique:", np.unique(test,return_counts=True))
     
