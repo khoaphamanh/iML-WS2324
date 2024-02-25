@@ -14,6 +14,7 @@ from torchinfo import summary
 from sklearn.metrics import f1_score
 import numpy as np
 import matplotlib.pyplot as plt
+import joblib
 
 """
 Output of this file is the pretrained blackbox model as neural network on COMPAS dataset. The task is binary classification, we use Adam optimizer and BCE Loss to train model. User can run this file with syntax from argparse to test our file:
@@ -100,9 +101,9 @@ def split_and_normalize(X,y,seed,test_size):
     #turn data to tensor
     X_train, X_test, y_train, y_test = torch.tensor(X_train).float(), torch.tensor(X_test).float(), torch.tensor(y_train), torch.tensor(y_test)
     
-    return X_train, X_test, y_train, y_test
+    return X_train, X_test, y_train, y_test, scaler
     
-X_train, X_test, y_train, y_test = split_and_normalize(X=X,y=y,seed=SEED,test_size=TEST_SIZE)
+X_train, X_test, y_train, y_test, scaler = split_and_normalize(X=X,y=y,seed=SEED,test_size=TEST_SIZE)
 
 #create model
 class BlackBoxModel(nn.Module):
@@ -217,6 +218,10 @@ model_path = os.path.join(current_path,NAME+".pth")
 if not os.path.exists(model_path):
     torch.save(state_dict,model_path)
 print("Done!!! Your model is saved under name {}".format(NAME+".pth"))
+
+#save the scaler 
+scaler_path = os.path.join(current_path, "mms_scaler.bin")
+joblib.dump(scaler,scaler_path,compress=True)
 
 #save the metrics
 plt.figure(figsize=(13,7))
