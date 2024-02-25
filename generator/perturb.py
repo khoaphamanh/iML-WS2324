@@ -49,7 +49,7 @@ def pertube_data_generator (X:np.array,x:np.array,numerical_feature_index: list,
     new_y = [1]
     
     for n in range(num_pertube):
-        x_ = np.array([x[i] + np.random.normal(0,pertube_std,1)[0] if i in numerical_feature_index else x[i]  for i in range(len(x))])
+        x_ = np.array([x[i] + np.random.normal(0,pertube_std,1)[0] if i in numerical_feature_index else x[i] for i in range(len(x))])
         new_X.append(x_)
         new_y.append(0)
         
