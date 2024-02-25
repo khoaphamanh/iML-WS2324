@@ -127,7 +127,27 @@ class AdversarialModel:
         y_unbias = np.logical_xor(y_unrelated_1, y_unrelated_2).astype(int)
     
         return X_unbias, y_unbias
+    
+    def add_uncorrelated_feaatures (self,x: np.array):
+        """
+        Add two correlated feature in instance x or datasets x
         
+    	Parameters:
+            x (np.array): a single instance or dataset
+        Returns:
+            x (np.array): a single instance or dataset with 2 more features
+        """
+        #check shape
+        if len(x.shape) == 1:
+            x = x.reshape(1,-1)
+            
+        #Add two correlated feature    
+        unrelated_column_one = np.random.choice([0, 1], size=(x.shape[0], 1))
+        unrelated_column_two = np.random.choice([0, 1], size=(x.shape[0], 1))
+        x = np.column_stack((x,unrelated_column_one,unrelated_column_two))
+        
+        return x
+    
     def evaluate (self, input_data:str, X:np.array):
         """
         Load pretrained model on input_name dataset and evaluate unseen data to check if the sample real hay fake. Real sample goes to bias model, which will get the label 0 if the feature race equal to African-Black. Fake samples will go to unbias model, which will get logic xor of value of feature unrelated 1 and 2
@@ -149,9 +169,7 @@ class AdversarialModel:
         model = joblib.load(model_path)
         
         # Generate unrelated columns
-        unrelated_column_one = np.random.choice([0, 1], size=(X.shape[0], 1))
-        unrelated_column_two = np.random.choice([0, 1], size=(X.shape[0], 1))
-        X = np.column_stack((X,unrelated_column_one,unrelated_column_two))
+        #X = self.add_uncorrelated_feaatures(X)
         
         # predict real fake sample
         y_pred = model.predict(X)
