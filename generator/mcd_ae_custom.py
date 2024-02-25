@@ -3,7 +3,6 @@ import sys
 project_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_path)
 import utils
-
 import torch
 import torch.nn as nn
 from sklearn.model_selection import train_test_split
@@ -18,21 +17,10 @@ import matplotlib.pyplot as plt
 """
 Because the model mcd_vae.pth in file mcd_vae.py and generated data gen_data.npy don't really have good performance. Therefore, we will customize this model using Auto Encoder, ReLU will be added in Decoder, there will be more Linear Layers in both Encoder and Decoder. We will customize the parameters again. We will customize the parameters and save them in utils.py.
 
-    python mcd_vae.py --name "yourname" --intermediate_dim "your_intermediate_dim" --latent_dim "your_latent_dim" --dropout "your_dropout" --batch_size "your_batch_size" --lr "your_lr" --epoch "your_epoch" --wd "your_wd" --num_gen "your_num_gen" --name_gen "your_name_gen" --name_metrics "your_name_metrics"
-    
-Then the output should be yourname.pth and your_gen_data.npy. Default of the arguments:
-
---name: "mcd_ae_custom" and our output files is mcd_ae_custom.pth
---intermediate_dim: 64
---latent_dim: 2
---dropout: 0.05
---batch_size: 100
---lr: 0.01
---epoch: 100
---wd: 1e-5
---num_gen: 100
---name_gen: "gen_data_custom" and our generated data files is gen_data_custom.npy shape (n_samples, num_gen+1, n_feature + 1)
---name_metrics: "metrics_ae_custom" and the metrics of the model is saved under the name metrics_ae_custom.png
+Output of this file are:
+    - gen_data_custom.npy: generated data
+    - mcd_ae_custom.pth: a pretrained MCD VAE
+    - metrics_vae_custom.png: performance visualization of MCD AE custom
 """
 
 #fix parameter and constante
@@ -42,46 +30,19 @@ ORIGIN_DIM = utils.origin_dim_vae
 TEST_SIZE = utils.test_size
 CATEGORICAL_FEATURE_INDEX = utils.categorical_feature_index
 
-# add argument
-parse = argparse.ArgumentParser()
-parse.add_argument("--name", type=str, default=utils.name_vae_custom,
-                   help="name of the pretrained generator model name.pth, default is '{}'".format(utils.name_vae_custom))
-parse.add_argument("--intermediate_dim", type=int, default=utils.intermediate_dim_vae_custom,
-                   help="number of intermediate dimensions in the first hidden layer in model, default is {}".format(utils.intermediate_dim_vae_custom))
-parse.add_argument("--latent_dim", type=int, default=utils.latent_dim_vae_custom,
-                   help="number of dimension in latent space in model, default is {}".format(utils.latent_dim_vae_custom))
-parse.add_argument("--dropout", type=float, default=utils.dropout_vae_custom,
-                   help="dropout rate, default is {}".format(utils.dropout_vae_custom))
-parse.add_argument("--batch_size", type=int, default=utils.batch_size_vae,
-                   help="batch_size, default is {}".format(utils.batch_size_vae))
-parse.add_argument("--lr", type=float, default=utils.lr_vae_custom,
-                   help="learning rate, default is {}".format(utils.lr_vae_custom))
-parse.add_argument("--epoch", type=int, default=utils.epoch_vae_custom,
-                   help="epoch, default is {}".format(utils.epoch_vae_custom))
-parse.add_argument("--wd", type=float, default=utils.wd_vae_custom,
-                   help="weight decay, default is {}".format(utils.wd_vae_custom))
-parse.add_argument("--num_gen", type=int, default=utils.num_gen,
-                   help="number of generated samples from one real sample {}".format(utils.num_gen))
-parse.add_argument("--name_gen", type=str, default=utils.name_gen_custom,
-                   help="name saved generated data {}".format(utils.name_gen_custom))
-parse.add_argument("--name_metrics", type=str, default=utils.name_metrics_custom,
-                   help="name the saved metrics file {}".format(utils.name_metrics_custom))
+NAME = utils.name_vae_custom
+INTERMEDIATE_DIM = utils.intermediate_dim_vae_custom
+LATENT_DIM = utils.latent_dim_vae_custom
+LR = utils.lr_vae_custom
+EPOCH = utils.epoch_vae_custom
+WD = utils.wd_vae_custom
+DROPOUT = utils.dropout_vae_custom
+BATCH_SIZE = utils.batch_size_vae
+NUM_GEN = utils.num_gen
+NAME_GEN = utils.name_gen_custom
+NAME_METRICS = utils.name_metrics_custom
 
-# read the argument
-args = parse.parse_args()
-NAME = args.name
-INTERMEDIATE_DIM = args.intermediate_dim
-LATENT_DIM = args.latent_dim
-LR = args.lr
-EPOCH = args.epoch
-WD = args.wd
-DROPOUT = args.dropout
-BATCH_SIZE = args.batch_size
-NUM_GEN = args.num_gen
-NAME_GEN = args.name_gen
-NAME_METRICS = args.name_metrics
-
-#turn data to tensor and split it
+# turn data to tensor and split it
 def split_and_normalize(X,y,seed,test_size):
     """ 
     This function will split the data into train and test, then normalize the features in X_train using Min-Max-Scaler and fit_transform on X_test

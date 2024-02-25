@@ -16,6 +16,7 @@ import joblib
 
 """
 This file train the generator model as Monte Carlo Dropout Variational Auto Encoder (MCD VAE) on COMPAS dataset. The task is to generate data in same distribution of COMPAS dataset. In this file we use the hyperparameter and structure of the MCD VAE from paper and repostory https://github.com/domenVres/Robust-LIME-SHAP-and-IME
+
 Output of this file are:
     - gen_data.npy: generated data
     - mcd_vae.pth: a pretrained MCD VAE
@@ -29,6 +30,7 @@ torch.manual_seed(SEED)
 ORIGIN_DIM = utils.origin_dim_vae
 TEST_SIZE = utils.test_size
 CATEGORICAL_FEATURE_INDEX = utils.categorical_feature_index
+
 NAME = utils.name_vae
 INTERMEDIATE_DIM = utils.intermediate_dim_vae
 LATENT_DIM = utils.latent_dim_vae
