@@ -4,7 +4,6 @@ project_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_path)
 import utils
 import pandas as pd
-import argparse
 
 def preprocessing_compas(name_raw_dataset:pd.DataFrame, name = utils.name_preprocessed):
     """
@@ -64,21 +63,11 @@ def preprocessing_compas(name_raw_dataset:pd.DataFrame, name = utils.name_prepro
 
 if __name__ == "__main__":
     """
-    Output of this file are the preprocessed COMPAS dataset and label. User can run this file with syntax from argparse to test our function:
-    
-        python preprocessing.py --name "yourname" 
-        
+    Output of this file are the preprocessed COMPAS dataset and label. 
     Then the output should be yourname_X.csv and yourname_y.csv. Default of the --name is "compas" and our output files are compas_X.csv and compas_y.csv
     """
-    # create a argpase
-    parse = argparse.ArgumentParser()
-
-    # add argument
-    parse.add_argument("--name", type=str, default=utils.name_preprocessed,help="preprocessed data will be save under the name_X.csv and name_y.csv, default is {}".format(utils.name_preprocessed))
-    
-    # read the argument
-    args = parse.parse_args()
-    name = args.name
+    # name preprocessed
+    name = utils.name_preprocessed
     
     # preprocessing
     name_raw_dataset = utils.name_raw_data
