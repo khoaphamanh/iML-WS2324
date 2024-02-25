@@ -3,12 +3,10 @@ import sys
 project_path = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 sys.path.append(project_path)
 import utils
-
 import torch
 import torch.nn as nn
 from sklearn.model_selection import train_test_split
 from sklearn.preprocessing import MinMaxScaler
-import argparse
 import pandas as pd
 from torchinfo import summary
 from torch.utils.data import TensorDataset, DataLoader
@@ -17,25 +15,12 @@ import matplotlib.pyplot as plt
 import joblib
 
 """
-This file train the generator model as Monte Carlo Dropout Variational Auto Encoder (MCD VAE) on COMPAS dataset. The task is to generate data in same distribution of COMPAS dataset. Output of this file is a pretrained MCD VAE and the generated dataset. In this file we use the hyperparameter and structure of the MCD VAE from paper and repostory https://github.com/domenVres/Robust-LIME-SHAP-and-IME
-
-    python mcd_vae.py --name "yourname" --intermediate_dim "your_intermediate_dim" --latent_dim "your_latent_dim" --dropout "your_dropout" --batch_size "your_batch_size" --lr "your_lr" --epoch "your_epoch" --wd "your_wd" --landa "your_landa" --num_gen "your_num_gen" --name_gen "your_name_gen" --name_metrics "your_name_metrics"
-    
-Then the output should be yourname.pth and your_gen_data.npy. Default of the arguments:
-
---name: "mcd_vae" and our output files is mcd_vae.pth
---intermediate_dim: 8
---latent_dim: 4
---dropout: 0.3
---batch_size: 100
---lr: 0.001
---epoch: 100
---wd: 1e-4
---landa: 1
---num_gen: 100
---name_gen: "gen_data" and our generated data files is gen_data.npy shape (n_samples, num_gen+1, n_feature + 1)
---name_metrics: "metrics_ae_custom" and the metrics of the model is saved under the name metrics_vae.png
---name_scaler: "scaler_vae" and the saved scaler for preprocessing step is saved under the name scaler.bin
+This file train the generator model as Monte Carlo Dropout Variational Auto Encoder (MCD VAE) on COMPAS dataset. The task is to generate data in same distribution of COMPAS dataset. In this file we use the hyperparameter and structure of the MCD VAE from paper and repostory https://github.com/domenVres/Robust-LIME-SHAP-and-IME
+Output of this file are:
+    - gen_data.npy: generated data
+    - mcd_vae.pth: a pretrained MCD VAE
+    - metrics_vae.png: performance visualization of MCD VAE
+    - scaler.bin: scaler for normalization before train the model
 """
 
 #fix parameter and constante
@@ -44,51 +29,19 @@ torch.manual_seed(SEED)
 ORIGIN_DIM = utils.origin_dim_vae
 TEST_SIZE = utils.test_size
 CATEGORICAL_FEATURE_INDEX = utils.categorical_feature_index
-
-# add argument
-parse = argparse.ArgumentParser()
-parse.add_argument("--name", type=str, default=utils.name_vae,
-                   help="name of the pretrained generator model name.pth, default is '{}'".format(utils.name_vae))
-parse.add_argument("--intermediate_dim", type=int, default=utils.intermediate_dim_vae,
-                   help="number of intermediate dimensions in the first hidden layer in model, default is {}".format(utils.intermediate_dim_vae))
-parse.add_argument("--latent_dim", type=int, default=utils.latent_dim_vae,
-                   help="number of dimension in latent space in model, default is {}".format(utils.latent_dim_vae))
-parse.add_argument("--dropout", type=float, default=utils.dropout_vae,
-                   help="dropout rate, default is {}".format(utils.dropout_vae))
-parse.add_argument("--batch_size", type=int, default=utils.batch_size_vae,
-                   help="batch_size, default is {}".format(utils.batch_size_vae))
-parse.add_argument("--lr", type=float, default=utils.lr_vae,
-                   help="learning rate, default is {}".format(utils.lr_vae))
-parse.add_argument("--epoch", type=int, default=utils.epoch_vae,
-                   help="epoch, default is {}".format(utils.epoch_vae))
-parse.add_argument("--wd", type=float, default=utils.wd_vae,
-                   help="weight decay, default is {}".format(utils.wd_vae))
-parse.add_argument("--landa", type=float, default=utils.landa_vae,
-                   help="landa for Kullback Leibler Divergence in loss, default is {}".format(utils.landa_vae))
-parse.add_argument("--num_gen", type=int, default=utils.num_gen,
-                   help="number of generated samples from one real sample {}".format(utils.num_gen))
-parse.add_argument("--name_gen", type=str, default=utils.name_gen,
-                   help="name saved generated data {}".format(utils.name_gen))
-parse.add_argument("--name_metrics", type=str, default=utils.name_metrics_vae,
-                   help="name the metrics '{}'".format(utils.name_metrics_vae))
-parse.add_argument("--name_scaler", type=str, default=utils.name_scaler_custom,
-                   help="name the metrics {}".format(utils.name_scaler_custom))
-
-# read the argument
-args = parse.parse_args()
-NAME = args.name
-INTERMEDIATE_DIM = args.intermediate_dim
-LATENT_DIM = args.latent_dim
-LR = args.lr
-EPOCH = args.epoch
-WD = args.wd
-DROPOUT = args.dropout
-BATCH_SIZE = args.batch_size
-LANDA = args.landa
-NUM_GEN = args.num_gen
-NAME_GEN = args.name_gen
-NAME_METRICS = args.name_metrics
-NAME_SCALER = args.name_scaler
+NAME = utils.name_vae
+INTERMEDIATE_DIM = utils.intermediate_dim_vae
+LATENT_DIM = utils.latent_dim_vae
+LR = utils.lr_vae
+EPOCH = utils.epoch_vae
+WD = utils.wd_vae
+DROPOUT = utils.dropout_vae
+BATCH_SIZE = utils.batch_size_vae
+LANDA = utils.landa_vae
+NUM_GEN = utils.num_gen
+NAME_GEN = utils.name_gen
+NAME_METRICS = utils.name_metrics_vae
+NAME_SCALER = utils.name_scaler_vae
 
 #create model
 class MonteCarloDropoutVariationalAutoEncoder(nn.Module):
