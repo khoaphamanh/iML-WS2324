@@ -1,0 +1,9 @@
+Result of adversarial trained on gen_data data evaluated on mcd_vae data: Accuracy 0.0 
+Result of adversarial trained on gen_data data evaluated on mcd_ae_custom data: Accuracy 0.11650485436893204 
+Result of adversarial trained on gen_data_custom data evaluated on mcd_vae data: Accuracy 0.0 
+Result of adversarial trained on gen_data_custom data evaluated on mcd_ae_custom data: Accuracy 0.11650485436893204 
+Result of adversarial trained on gen_data_perturb data evaluated on mcd_vae data: Accuracy 0.040453074433656956 
+Result of adversarial trained on gen_data_perturb data evaluated on mcd_ae_custom data: Accuracy 0.038834951456310676 
+Result of adversarial trained on gen_data data evaluated on perturb generator data: Accuracy 0.0 
+Result of adversarial trained on gen_data_custom data evaluated on perturb generator data: Accuracy 0.014563106796116505 
+Result of adversarial trained on gen_data_perturb data evaluated on perturb generator data: Accuracy 0.009708737864077669 
