@@ -11,6 +11,7 @@ import pandas as pd
 from sklearn.model_selection import train_test_split
 import joblib
 import torch
+from tqdm import tqdm
 from generator.perturb import pertube_data_generator
 from generator.mcd_ae_custom import MonteCarloDropoutAutoEncoderCustom
 from generator.mcd_vae import MonteCarloDropoutVariationalAutoEncoder
@@ -145,7 +146,6 @@ if __name__ == "__main__":
     glime = LimeCustom(blackbox=adv,seed=SEED)
     
     #load generator
-    
     #generator VAE
     generator_VAE = MonteCarloDropoutVariationalAutoEncoder(origin_dim=ORIGIN_DIM,intermediate_dim=INTERMEDIATE_DIM_VAE,latent_dim=LATENT_DIM_VAE,dropout=DROPOUT_VAE)
     model_path_VAE = os.path.join(project_path, "generator",NAME_VAE+".pth") 
@@ -163,16 +163,16 @@ if __name__ == "__main__":
     generator_AE.load_state_dict(state_dict_AE)
 
     #name pretraied classifier
-    name_gen = [NAME_GEN_VAE,NAME_GEN_CUSTOM,NAME_GEN_PERTURB]
-    generator = [generator_VAE,generator_VAE]
-    name_generator = [NAME_VAE,NAME_GEN_CUSTOM]
+    name_gen = [NAME_GEN_VAE,NAME_GEN_CUSTOM, NAME_GEN_PERTURB]# ,,,]NAME_GEN_PERTURB NAME_GEN_CUSTOM NAME_GEN_VAE
     
+    generator = [generator_VAE, generator_AE] #,]  generator_AE
+  
     #use glime for MCD_VAE and AE_CUSTOM
     result = ""
-    for name in name_gen:
-        for idx ,gen in enumerate(generator):
+    for name in tqdm(name_gen):
+        for idx ,gen in enumerate(tqdm(generator)):
             contri = []
-            for x in X_test:
+            for x in tqdm(X_test):
                 
                 #normalized x
                 x_scaled = scaler.transform(x.reshape(1,-1)).ravel()
@@ -191,9 +191,9 @@ if __name__ == "__main__":
             result = result + text
 
     #use glime for perturb generator
-    for name in name_gen:
+    for name in tqdm(name_gen):
         contri = []
-        for x in X_test:
+        for x in tqdm(X_test):
             #sampled x
             x_sampled = pertube_data_generator(X = X,x=x,numerical_feature_index=NUMERICAL_FEATURE_INDEX,num_pertube=NUM_GEN_POINTS,pertube_std=PERTURB_STD, return_label = False)
             
@@ -204,7 +204,7 @@ if __name__ == "__main__":
 
         contri = np.array(contri)
         accuracy = np.sum(contri == RACE_FEATURE_INDEX) / len(contri)
-        text = "Result of adversarial trained on {} data evaluated on {} data: Accuracy {} \n".format(name,name_generator[idx],accuracy)
+        text = "Result of adversarial trained on {} data evaluated on {} data: Accuracy {} \n".format(name,"perturb generator",accuracy)
         result = result + text
         
 #save the result as text
