@@ -6,6 +6,7 @@ sys.path.append(project_path)
 import utils
 
 import numpy as np
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import f1_score
@@ -69,6 +70,12 @@ class AdversarialModel:
         ytrain_flatten = ytrain.reshape(-1,1).ravel()
         xtest_flatten = xtest.reshape(-1,11)
         ytest_flatten = ytest.reshape(-1,1).ravel()
+        
+        # Normalize the data
+        scaler = MinMaxScaler()
+        scaler.fit(xtrain_flatten)
+        xtrain_flatten = scaler.transform(xtrain_flatten)
+        xtest_flatten = scaler.transform(xtest_flatten)
         
         # Train the Random Forest Classifier
         sampled_data_identifier = RandomForestClassifier(n_estimators=self.n_estimators, random_state = self.seed)
@@ -168,11 +175,9 @@ class AdversarialModel:
         
         model = joblib.load(model_path)
         
-        # Generate unrelated columns
-        #X = self.add_uncorrelated_feaatures(X)
-        
         # predict real fake sample
         y_pred = model.predict(X)
+        #print("y_pred_unique:", np.unique(y_pred,return_counts=True))
         
         #sort to bias and unbias model
         X_bias = X[y_pred==1]

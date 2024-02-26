@@ -7,7 +7,7 @@ sys.path.append(project_path)
 
 import utils
 import pandas as pd
-#from sklearn.preprocessing import StandardScaler, MinMaxScaler
+from sklearn.preprocessing import StandardScaler, MinMaxScaler
 from sklearn.model_selection import train_test_split
 import joblib
 import torch
@@ -90,6 +90,10 @@ class LimeCustom:
         #calculate phi
         X, phi = self.weights(sampled_instance=X,sigma=sigma)
 
+        #normalize the data
+        X = scaler_lime.transform(X)
+        instance = scaler_lime.transform(instance.reshape(1,-1)).ravel()
+        
         #train the interpretable mode
         inter_model = LogisticRegression(random_state=self.seed)
         inter_model.fit(X,y, sample_weight=phi)
@@ -162,13 +166,19 @@ if __name__ == "__main__":
     state_dict_AE = torch.load(model_path_AE)
     generator_AE.load_state_dict(state_dict_AE)
 
-    #name pretraied classifier
-    name_gen = [NAME_GEN_VAE,NAME_GEN_CUSTOM, NAME_GEN_PERTURB]# ,,,]NAME_GEN_PERTURB NAME_GEN_CUSTOM NAME_GEN_VAE
-    
-    generator = [generator_VAE, generator_AE] #,]  generator_AE
-  
-    #use glime for MCD_VAE and AE_CUSTOM
+    #save result as text
     result = ""
+    
+    X_ = adv.add_uncorrelated_feaatures (X)
+    scaler_lime = MinMaxScaler()
+    scaler_lime.fit(X_)
+    
+    #name pretraied classifier
+    name_gen = [NAME_GEN_VAE,NAME_GEN_CUSTOM, NAME_GEN_PERTURB]
+    generator = [generator_VAE, generator_AE]
+    name_generator = [NAME_VAE,NAME_VAE_CUSTOM]
+
+    #use glime for MCD_VAE and AE_CUSTOM
     for name in tqdm(name_gen):
         for idx ,gen in enumerate(tqdm(generator)):
             contri = []
